@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install -g pnpm@10.7.0 && pnpm install --no-frozen-lockfile",
+  "installCommand": "",
   "buildCommand": "pnpm build --filter=admin",
   "framework": "nextjs"
 }
