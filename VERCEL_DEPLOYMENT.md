@@ -120,11 +120,31 @@ The `vercel.json` files in each app directory are configured for monorepo deploy
 
 ### Build Fails with "ERR_INVALID_THIS" or "ERR_PNPM_META_FETCH_FAIL"
 
-This error usually means:
-1. **Root Directory is wrong**: Make sure it's set to `sms-frontend` (monorepo root), NOT `sms-frontend/apps/admin`
-2. **Package Manager not set**: Go to Settings → General → Package Manager → Set to `pnpm`
-3. **Node.js version too old**: Go to Settings → General → Node.js Version → Set to `20.x` or higher
-4. **pnpm version mismatch**: The project uses `pnpm@9.12.3`. Vercel should auto-detect this from `packageManager` field
+This error is caused by a bug in pnpm 9.x versions. **Solution: Use pnpm 8.15.6** (stable version without the bug).
+
+**Fixed by:**
+1. ✅ **pnpm version downgraded**: Project now uses `pnpm@8.15.6` (stable, no bug)
+2. ✅ **packageManager field set**: Root `package.json` has `"packageManager": "pnpm@8.15.6"`
+3. ✅ **.npmrc configured**: Added network retry and timeout settings
+4. ✅ **pnpm-lock.yaml committed**: Lockfile is present and committed
+
+**Additional steps in Vercel Dashboard:**
+1. **Add Environment Variable** (CRITICAL):
+   - Go to Settings → Environment Variables
+   - Add: `ENABLE_EXPERIMENTAL_COREPACK` = `1`
+   - Apply to: Production, Preview, Development
+
+2. **Verify settings:**
+   - Root Directory: `sms-frontend` (monorepo root)
+   - Package Manager: `pnpm` (should auto-detect 8.15.6)
+   - Node.js Version: `22.x` (from engines field)
+   - Install/Build Commands: Leave empty (uses vercel.json)
+
+3. **Clear Build Cache:**
+   - Go to Settings → General → Clear Build Cache
+   - Or redeploy with "Clear cache and redeploy" option
+
+**Why this works:** pnpm 8.15.6 doesn't have the `ERR_INVALID_THIS` bug that affects pnpm 9.x versions. The `ENABLE_EXPERIMENTAL_COREPACK=1` environment variable ensures Vercel uses the correct pnpm version from `packageManager` field.
 
 ### Build Fails with "Cannot find module"
 
