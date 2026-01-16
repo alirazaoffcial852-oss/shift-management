@@ -1,0 +1,15 @@
+{
+  "extends": "@workspace/typescript-config/base.json",
+  "allowImportingTsExtensions": true,
+  "moduleResolution": "node",
+  "allowSyntheticDefaultImports": true,
+  "resolveJsonModule": true,
+  "paths": {
+    "@workspace/*": ["./ui/src/lib/http/*", "./translations/utils/*"]
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true
+  }
+}

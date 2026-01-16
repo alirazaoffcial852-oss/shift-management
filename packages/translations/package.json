@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/translations",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./utils": "./utils.ts",
+    "./en": "./locales/en.json",
+    "./de": "./locales/de.json"
+  },
+  "peerDependencies": {
+    "next-intl": "^3.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@workspace/typescript-config": "workspace:*",
+    "next-intl": "^3.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  }
+}

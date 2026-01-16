@@ -1,0 +1,36 @@
+{
+  "name": "admin",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001 --turbopack",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@workspace/ui": "workspace:*",
+    "@workspace/translations": "workspace:*",
+    "boring-avatars": "^1.11.2",
+    "lucide-react": "0.456.0",
+    "next": "15.3.8",
+    "next-intl": "^3.0.0",
+    "next-themes": "^0.4.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sonner": "^1.7.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "18.3.0",
+    "@types/react-dom": "18.3.1",
+    "@workspace/typescript-config": "workspace:*",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "extends": "@workspace/typescript-config/react-library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@workspace/translations/*": ["./*"]
+    },
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": false
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
+}
