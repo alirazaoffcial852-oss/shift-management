@@ -11,10 +11,11 @@ const ViewWagonList = () => {
     wagons,
     currentPage,
     totalPages,
-    setCurrentPage,
+    onPageChange,
     handleSearch,
     handleTimeFilterChange,
     handleDateRangeChange,
+    isLoading,
   } = useWagonListForm();
 
   const t = useTranslations();
@@ -34,11 +35,14 @@ const ViewWagonList = () => {
         actions={actions}
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        onPageChange={onPageChange}
         onTimeFilterChange={handleTimeFilterChange}
         onDateRangeChange={handleDateRangeChange}
         onSearchChange={handleSearch}
         actionsHeader={tWagonList("actions")}
+        pagination={true}
+        search={true}
+        isLoading={isLoading}
       />
     </div>
   );

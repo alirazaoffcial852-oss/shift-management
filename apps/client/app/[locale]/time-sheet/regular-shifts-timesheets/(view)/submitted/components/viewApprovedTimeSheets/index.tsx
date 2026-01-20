@@ -17,7 +17,7 @@ const ViewSubmittedTimeSheet = () => {
     timeSheets,
     currentPage,
     totalPages,
-    setCurrentPage,
+    onPageChange,
     handleSearch,
     updateTimeSheetStatus,
   } = useTimeSheetTable();
@@ -53,11 +53,13 @@ const ViewSubmittedTimeSheet = () => {
         data={timeSheets}
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        onPageChange={onPageChange}
         onSearchChange={handleSearch}
         enableSelection={true}
         selectedRows={selectedTimeSheets}
         onSelectionChange={setSelectedTimeSheets}
+        search={true}
+        pagination={true}
       />
     </div>
   );

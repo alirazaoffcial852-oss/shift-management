@@ -76,6 +76,11 @@ export const useCalendar = (view?: "weekly" | "monthly") => {
       console.log("Applying filters:", newFilters);
       setFilters(newFilters);
 
+      if (view === "weekly") {
+        const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+        return;
+      }
       const yearParam = searchParams.get("year");
       const monthParam = searchParams.get("month");
 
@@ -104,7 +109,7 @@ export const useCalendar = (view?: "weekly" | "monthly") => {
         end: monthEnd,
       });
     },
-    [refetchWithFilters, currentDate, searchParams]
+    [refetchWithFilters, currentDate, searchParams, view]
   );
 
   const updateUrlWithDate = useCallback(
@@ -365,6 +370,7 @@ export const useCalendar = (view?: "weekly" | "monthly") => {
     fetchWeeklyShifts,
     isLoading,
     error,
+    filters,
 
     // Navigation actions
     handlePreviousMonth,

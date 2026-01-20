@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog";
 import TopicForm from "@/components/Forms/TopicForm";
-import { DialogProps } from "@/types/topic";
+import { DialogProps } from "@/types/shared/global";
 
 const TopicDialog: React.FC<
   DialogProps & { addLocalTopic?: (topic: any) => void }

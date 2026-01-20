@@ -5,10 +5,10 @@ import { toast } from "sonner";
 import OrderService from "@/services/order.service";
 import {
   CreateOrderData,
-  FormErrors,
   SupplierLocation,
   TariffLocation,
 } from "@/types/order";
+import { FormErrors } from "@/types/shared/global";
 
 export const useOrderForm = (id?: number, onClose?: () => void) => {
   const router = useRouter();
@@ -211,8 +211,17 @@ export const useOrderForm = (id?: number, onClose?: () => void) => {
 
     if (!formData.supplier_id) newErrors.supplier_id = "Supplier is required";
     if (!formData.tariff_id) newErrors.tariff_id = "Tariff Point is required";
-    if (!formData.delivery_date)
+    if (!formData.delivery_date) {
       newErrors.delivery_date = "Delivery Date is required";
+    } else {
+      const deliveryDate = new Date(`${formData.delivery_date}T00:00:00`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (deliveryDate <= today) {
+        newErrors.delivery_date = "Delivery Date must be greater than today";
+      }
+    }
     if (!formData.type_of_wagon)
       newErrors.type_of_wagon = "Type of Wagon is required";
     if (!formData.no_of_wagons || formData.no_of_wagons <= 0)
@@ -278,8 +287,32 @@ export const useOrderForm = (id?: number, onClose?: () => void) => {
 
       return true;
     } catch (error: any) {
-      const errorMessage = error?.data?.message || "An error occurred";
-      toast.error(errorMessage);
+      // Handle validation errors from backend
+      if (error?.data?.type === "VALIDATION_ERROR" && error?.data?.errors) {
+        const backendErrors = error.data.errors;
+        const newErrors: FormErrors = {};
+
+        // Map backend errors to form errors
+        Object.keys(backendErrors).forEach((key) => {
+          const errorMessages = backendErrors[key];
+          if (Array.isArray(errorMessages) && errorMessages.length > 0) {
+            newErrors[key as keyof FormErrors] = errorMessages[0];
+          }
+        });
+
+        setErrors(newErrors);
+
+        // Show toast with first error message
+        const firstError = Object.values(backendErrors)[0];
+        if (Array.isArray(firstError) && firstError.length > 0) {
+          toast.error(firstError[0]);
+        } else {
+          toast.error("Validation failed. Please check the form.");
+        }
+      } else {
+        const errorMessage = error?.data?.message || "An error occurred";
+        toast.error(errorMessage);
+      }
       console.error("Error submitting form:", error);
       return false;
     } finally {

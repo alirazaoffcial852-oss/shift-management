@@ -1,5 +1,6 @@
-export interface Locomotive {
-  id?: number;
+import { BaseEntity, FormErrors } from "./shared/global";
+
+export interface Locomotive extends BaseEntity {
   name: string;
   model_type: string;
   engine: string;
@@ -9,11 +10,9 @@ export interface Locomotive {
   status?: string;
 }
 
-export interface FormErrors {
-  [key: string]: string;
-}
-export interface locomotive {
-  id?: number;
+export interface LocomotiveFormErrors extends FormErrors {}
+
+export interface LocomotiveBasic extends BaseEntity {
   name: string;
   company_id?: number;
 }

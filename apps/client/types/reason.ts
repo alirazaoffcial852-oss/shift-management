@@ -1,7 +1,7 @@
-import { FORMMODE } from "./shared/global";
+import { ApiPaginatedResponse, PaginationParams } from "./pagination";
+import { BaseEntity, FormProps, DialogProps } from "./shared/global";
 
-export interface Reason {
-  id?: number;
+export interface Reason extends BaseEntity {
   reason: string;
 }
 
@@ -9,37 +9,19 @@ export interface ReasonFormErrors {
   reason?: string;
 }
 
-export interface ReasonFormProps {
-  useComponentAs: FORMMODE;
-  id?: number;
-  onClose?: () => void;
-  isDialog?: boolean;
-  onSubmit?: (success: boolean) => void;
+export interface ReasonFormProps extends FormProps {
   refetch: () => void;
 }
 
-export interface FetchReasonResponse {
-  data: {
-    data: Reason[];
-    pagination: {
-      total: number;
-      totalPages: number;
-    };
-  };
-}
+export interface FetchReasonResponse extends ApiPaginatedResponse<Reason> {}
 
-export interface DialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onClose: () => void;
-  type: "add" | "edit";
-  id?: string;
+export interface ReasonDialogProps extends DialogProps {
   refetch: () => void;
 }
 
-export interface TableActionsProps {
-  row: any;
-  onDelete?: (row: any) => void;
+export interface ReasonTableActionsProps {
+  row: Reason;
+  onDelete?: (row: Reason) => void;
   handleOpenAddDialog?: (config: { type: "add" | "edit"; id?: string }) => void;
   handleOpenViewDetailsDialog?: (config: {
     type: "add" | "edit";
@@ -47,11 +29,4 @@ export interface TableActionsProps {
   }) => void;
 }
 
-export interface GetAllReasonsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  startDate?: string;
-  endDate?: string;
-}
+export interface GetAllReasonsParams extends PaginationParams {}

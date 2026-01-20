@@ -27,13 +27,16 @@ class ProjectUSNShiftsService {
   async getAllProjectUSNShiftsByDate(
     from: string,
     to: string,
-    company_id?: number
+    company_id?: number,
+    limit?: number
   ) {
     try {
       const params = new URLSearchParams();
       params.set("date_from", from);
       params.set("date_to", to);
-      params.set("limit", "10000");
+      if (limit !== undefined) {
+        params.set("limit", limit.toString());
+      }
       if (company_id) params.set("company_id", company_id.toString());
       const response = await http.get(`/usn-shifts?${params.toString()}`);
       return response.data;

@@ -1,3 +1,4 @@
+import { Pagination, PaginatedResponse } from "./pagination";
 import { shiftRole } from "./shift";
 
 export interface SendRequestErrors {
@@ -51,13 +52,6 @@ export interface SendRequest {
   updated_at: string;
 }
 
-export interface Pagination {
-  page: number;
-  total_pages: number;
-  per_page: number;
-  total: number;
-}
-
 export interface SendRequestData {
   requester_company_id: number;
   target_company_id: number;
@@ -92,15 +86,7 @@ export interface ReceiveRequestData {
   };
 }
 
-export interface ReceiveRequestResponse {
-  data: ReceiveRequestData[];
-  pagination: {
-    page: number;
-    total_pages: number;
-    per_page: number;
-    total: number;
-  };
-}
+export interface ReceiveRequestResponse extends PaginatedResponse<ReceiveRequestData> {}
 
 export interface ReceiveRequestFilters {
   status?: "PENDING" | "ACCEPTED" | "REJECTED" | "";

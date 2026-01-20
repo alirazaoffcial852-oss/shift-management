@@ -745,6 +745,7 @@
       "lastUpdated": "Zuletzt aktualisiert:",
       "statusHistory": "Statusverlauf",
       "currentLocation": "Aktueller Standort:",
+      "arrivalLocation": "Ankunftsstandort:",
       "na": "N/V",
       "noStatusHistoryAvailable": "Keine Statushistorie verfügbar",
       "noWagonsFoundMatchingYourSearch": "Keine Wagen gefunden, die Ihrer Suche entsprechen",
@@ -1286,6 +1287,8 @@
           "status": "Status",
           "wagonType": "Wagentyp",
           "rail": "Gleis",
+          "date": "Datum",
+          "reset": "Filter zurücksetzen",
           "statusOptions": {
             "EMPTY": "Leer",
             "PLANNED_TO_BE_LOADED": "Geplante Beladung",
@@ -1308,6 +1311,7 @@
           "status": "Status",
           "nextStatus": "Nächster Status",
           "currentLocation": "Aktueller Standort",
+          "arrivalLocation": "Ankunftsstandort",
           "loadedEmptyLocation": "Beladen / Leer Standort",
           "typeOfWagon": "Gattung",
           "maxCapacity": "Max. Kapazität",
@@ -1828,7 +1832,8 @@
     "receive": "Empfangen",
     "approve": "Genehmigen",
     "reject": "Ablehnen",
-    "submit": "Absenden"
+    "submit": "Absenden",
+    "submitting": "Wird gesendet..."
   },
   "pdf": {
     "bautagesbericht": "Bautagesbericht",

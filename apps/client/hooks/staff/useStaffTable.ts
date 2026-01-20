@@ -12,44 +12,66 @@ export const useStaffTable = (initialPage = 1, limit = 20) => {
   const [timeFilter, setTimeFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState<any>(null);
   const [staff, setStaff] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: initialPage,
+    limit: limit,
+    total: 0,
+    total_pages: 0,
+  });
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStaff = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      if (company?.id === undefined) {
-        return;
+  const fetchStaff = useCallback(
+    async (page = 1, searchTermParam = "") => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        if (!company?.id) {
+          return;
+        }
+
+        const response = await StaffService.getAllStaff(
+          page,
+          pagination.limit,
+          company.id as number,
+          tabValue,
+          searchTermParam
+        );
+
+        const newStaff = response.data?.data || [];
+        setStaff(newStaff);
+
+        if (response.data.pagination) {
+          setPagination({
+            page: response.data.pagination.page,
+            limit: response.data.pagination.limit,
+            total: response.data.pagination.total,
+            total_pages: response.data.pagination.total_pages,
+          });
+        }
+
+        return response;
+      } catch (err: any) {
+        const errorMsg = err.message || "Failed to fetch staff";
+        setError(errorMsg);
+        console.error("Error fetching staff:", err);
+        return null;
+      } finally {
+        setIsLoading(false);
       }
-      const response = await StaffService.getAllStaff(
-        currentPage,
-        limit,
-        company.id,
-        tabValue
-      );
-      setStaff(response.data.data || []);
-      setTotalCount(response.data.pagination.total || 0);
-      setTotalPages(
-        Math.ceil((response.data.pagination.total_pages || 0) / limit)
-      );
-      return response;
-    } catch (err: any) {
-      const errorMsg = err.message || "Failed to fetch staff";
-      setError(errorMsg);
-      console.error("Error fetching staff:", err);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentPage, limit, tabValue, company]);
+    },
+    [company, pagination.limit, tabValue]
+  );
 
   useEffect(() => {
-    fetchStaff();
-  }, [fetchStaff, tabValue]);
+    fetchStaff(pagination.page, searchTerm);
+  }, [pagination.page, searchTerm, fetchStaff]);
+
+  const handleTabChange = useCallback((value: STATUS) => {
+    setTabValue(value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
   const updateStaffStatus = useCallback(
     (staffId: number, newStatus: STATUS) => {
       setStaff((prevStaff) =>
@@ -66,36 +88,44 @@ export const useStaffTable = (initialPage = 1, limit = 20) => {
 
   const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   }, []);
 
   const handleTimeFilterChange = useCallback((value: string) => {
     setTimeFilter(value);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   }, []);
 
   const handleDateRangeChange = useCallback((value: any) => {
     setDateRange(value);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   }, []);
+
+  const formattedStaff = staff.map((item: any, index: number) => ({
+    id: (pagination.page - 1) * pagination.limit + index + 1,
+    staffName: item.name,
+    ...item,
+  }));
 
   return {
     tabValue,
-    setTabValue,
+    setTabValue: handleTabChange,
     handleSearch,
     handleTimeFilterChange,
     handleDateRangeChange,
     setStaff,
-    staff: staff,
-    rawClients: staff,
+    staff: formattedStaff,
+    rawStaff: staff,
     isLoading,
     error,
-    totalCount,
-    currentPage,
-    totalPages,
-    setCurrentPage,
+    pagination,
+    totalCount: pagination.total,
+    currentPage: pagination.page,
+    totalPages: pagination.total_pages,
+    setCurrentPage: (page: number) =>
+      setPagination((prev) => ({ ...prev, page })),
     removeStaff,
     updateStaffStatus,
-    refetch: fetchStaff,
+    refetch: () => fetchStaff(pagination.page, searchTerm),
   };
 };

@@ -162,7 +162,7 @@ export const useProjectUsnProduct = (productId?: string) => {
     setCurrentPage(1);
 
     if (value === "ACTIVE" || value === "ARCHIVED") {
-      router.push("/products");
+      router.push(`/products?tab=${value.toLowerCase()}`);
     }
   };
 

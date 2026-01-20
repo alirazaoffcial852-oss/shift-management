@@ -1,12 +1,12 @@
 import { Company } from "@/types/configuration";
 import {
-  Pagination,
   SendRequest,
   SendRequestErrors,
   SendRequestFormData,
   SendRequestData,
   ReceiveRequestFilters,
 } from "@/types/request";
+import { Pagination } from "@/types/pagination";
 import { useState, useEffect } from "react";
 import CompanyService from "@/services/company";
 import RequestService from "@/services/request";
@@ -48,7 +48,7 @@ export const useSendRequestForm = (
   const [companiesPagination, setCompaniesPagination] = useState<Pagination>({
     page: 1,
     total_pages: 1,
-    per_page: 10,
+    limit: 10,
     total: 0,
   });
 

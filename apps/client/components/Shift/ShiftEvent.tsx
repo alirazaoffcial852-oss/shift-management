@@ -30,7 +30,7 @@ import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
 import { useRoleEmployees } from "@/hooks/employee/useRoleEmployees";
 import { useStatusIdentifiers } from "@/hooks/shiftStatusList";
 import { useAuth } from "@/providers/appProvider";
-import { Locomotive, locomotive } from "@/types/locomotive";
+import { Locomotive } from "@/types/locomotive";
 import { useRouter } from "next/navigation";
 import { BulkShiftActions } from "./BulkShiftActions";
 

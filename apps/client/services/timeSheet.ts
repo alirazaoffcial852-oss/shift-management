@@ -1,4 +1,5 @@
 import { TIMESHEET_STATUS } from "@/types/timeSheet";
+import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 
 class TimeSheetService {
@@ -6,21 +7,17 @@ class TimeSheetService {
     return await http.post("/timesheets", data);
   }
 
-  async getTimeSheet(page: number, limit: number, status?: TIMESHEET_STATUS, company?: string, employeeId?: string) {
-    let url = `/timesheets?page=${page}&limit=${limit}`;
+  async getTimeSheet(page: number, limit: number, status?: TIMESHEET_STATUS, company?: string, employeeId?: string, search?: string) {
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      status,
+      company_id: company,
+      employee_id: employeeId,
+      search,
+    });
 
-    if (status) {
-      url += `&status=${status}`;
-    }
-
-    if (company) {
-      url += `&company_id=${company}`;
-    }
-    if (employeeId) {
-      url += `&employee_id=${employeeId}`;
-    }
-
-    return await http.get(url);
+    return await http.get(`/timesheets?${searchParams.toString()}`);
   }
   async getTimeSheetById(id: string) {
     return await http.get(`/timesheets/${id}`);
@@ -41,28 +38,18 @@ class TimeSheetService {
     return await http.put(`/timesheets/${id}`, data);
   }
 
-  // USN Timesheet methods
   async getUSTimeSheet(page: number, limit: number, status?: TIMESHEET_STATUS, company?: string, employeeId?: string, fromDate?: string, toDate?: string) {
-    let url = `/timesheets/usn?page=${page}&limit=${limit}`;
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      status,
+      company_id: company,
+      employee_id: employeeId,
+      from_date: fromDate,
+      to_date: toDate,
+    });
 
-    if (status) {
-      url += `&status=${status}`;
-    }
-
-    if (company) {
-      url += `&company_id=${company}`;
-    }
-    if (employeeId) {
-      url += `&employee_id=${employeeId}`;
-    }
-    if (fromDate) {
-      url += `&from_date=${fromDate}`;
-    }
-    if (toDate) {
-      url += `&to_date=${toDate}`;
-    }
-
-    return await http.get(url);
+    return await http.get(`/timesheets/usn?${searchParams.toString()}`);
   }
 
   async getUSTimeSheetById(id: string) {

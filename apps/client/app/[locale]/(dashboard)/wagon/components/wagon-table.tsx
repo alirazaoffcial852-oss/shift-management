@@ -13,17 +13,18 @@ import { useTranslations } from "next-intl";
 import { usePermission } from "@/hooks/usePermission";
 
 interface WagonTableComponentProps {
-  searchParams: {
+  searchParams?: {
     page?: string;
     search?: string;
     status?: string;
   };
 }
 
-const WagonTableComponent: React.FC<WagonTableComponentProps> = ({
-  searchParams,
-}) => {
+const WagonTableComponent: React.FC<WagonTableComponentProps> = ({ searchParams }) => {
   const router = useRouter();
+
+  const initialPage = searchParams?.page ? parseInt(searchParams.page) : 1;
+  const initialSearch = searchParams?.search || "";
 
   const {
     wagons,
@@ -34,11 +35,10 @@ const WagonTableComponent: React.FC<WagonTableComponentProps> = ({
     setSelectedRows,
     handleEdit,
     handleDelete,
-    handlePageChange,
+    onPageChange,
     handleSearch,
     handleFilter,
-    transformWagonData,
-  } = useWagonTable(searchParams);
+  } = useWagonTable(initialPage, initialSearch);
   const t = useTranslations();
 
   const columns = getWagonTableColumns(t);
@@ -55,6 +55,9 @@ const WagonTableComponent: React.FC<WagonTableComponentProps> = ({
     tLabel,
     tCommon
   );
+  
+  const { hasPermission } = usePermission();
+
   const actions = allActions.filter((action) => {
     if (action.label?.toLowerCase().includes("edit")) {
       return hasPermission("wagon.update");
@@ -66,7 +69,6 @@ const WagonTableComponent: React.FC<WagonTableComponentProps> = ({
   });
   const filterOptions = getWagonFilterOptions(t);
   const tWagon = useTranslations("pages.wagon");
-  const { hasPermission } = usePermission();
 
   return (
     <div className="space-y-4 px-0 lg:px-[30px]">
@@ -84,11 +86,11 @@ const WagonTableComponent: React.FC<WagonTableComponentProps> = ({
 
       <SMSTable
         columns={columns}
-        data={wagons.map(transformWagonData)}
+        data={wagons}
         actions={actions}
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={handlePageChange}
+        onPageChange={onPageChange}
         isLoading={isLoading}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
@@ -100,6 +102,7 @@ const WagonTableComponent: React.FC<WagonTableComponentProps> = ({
         filterLabel={t("components.sidebar.select_status")}
         filterPlaceholder={t("components.sidebar.select_status")}
         actionsHeader={tWagon("actions")}
+        pagination={true}
       />
     </div>
   );

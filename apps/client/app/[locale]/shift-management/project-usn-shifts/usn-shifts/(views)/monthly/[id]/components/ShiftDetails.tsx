@@ -136,33 +136,26 @@ const ShiftDetails = () => {
   };
 
   const getTrainDriverName = () => {
-    const trainDriverRole = shift?.usn_shift_roles?.find((role: any) =>
-      role.role?.name?.toLowerCase().includes("train driver")
+    const trainDriverRole = shift?.usn_shift_roles?.find(
+      (role: any) => role.role?.has_train_driver === true
     );
-    const employeeId = trainDriverRole?.usn_shift_personnels?.[0]?.employee_id;
-    if (employeeId) {
-      const employee = employees.find((emp) => emp.id === employeeId);
-      return employee?.name || `${t("Employee")} #${employeeId}`;
+    const employee = trainDriverRole?.usn_shift_personnels?.[0]?.employee;
+    if (employee?.name) {
+      return employee.name;
     }
     return t("nA");
   };
 
   const getShuntingAttendantName = () => {
     const shuntingRoles = shift?.usn_shift_roles?.filter(
-      (role: any) =>
-        role.role?.name?.toLowerCase().includes("shunt") ||
-        role.role?.name?.toLowerCase().includes("shant")
+      (role: any) => role.role?.has_train_driver === false
     );
 
     if (shuntingRoles && shuntingRoles.length > 0) {
       const names = shuntingRoles
         .map((role: any) => {
-          const employeeId = role?.usn_shift_personnels?.[0]?.employee_id;
-          if (employeeId) {
-            const employee = employees.find((emp) => emp.id === employeeId);
-            return employee?.name || `Employee #${employeeId}`;
-          }
-          return null;
+          const employee = role?.usn_shift_personnels?.[0]?.employee;
+          return employee?.name || null;
         })
         .filter((name: string | null) => name !== null);
 

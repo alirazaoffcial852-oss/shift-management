@@ -37,15 +37,36 @@ export const LocomotivesCalendar: React.FC<LocomotivesCalendarProps> = ({
 }) => {
   const groupedShifts = groupShiftsByDate(shifts);
   const t = useTranslations("pages.calandar.days");
-  const getLocomotiveShifts = (date: Date, locomotiveId: number | null = null) => {
+  const getLocomotiveShifts = (
+    date: Date,
+    locomotiveId: number | null = null
+  ) => {
     const dateKey = format(date, "yyyy-MM-dd");
     const dayShifts = groupedShifts[dateKey] || [];
 
-    if (locomotiveId === null) {
-      return dayShifts.filter((shift: Shift) => shift?.shiftDetail?.has_locomotive && !shift.locomotive_id);
-    }
+      if (locomotiveId === null) {
+        if (locomotives.length === 0) {
+          return dayShifts.filter(
+            (shift: Shift) => shift?.shiftDetail?.has_locomotive
+          );
+        }
+        return dayShifts.filter(
+          (shift: Shift) => shift?.shiftDetail?.has_locomotive && !shift.locomotive_id
+        );
+      }
 
-    return dayShifts.filter((shift) => shift.locomotive_id !== undefined && Number(shift.locomotive_id) === locomotiveId);
+    return dayShifts.filter((shift) => {
+      const shiftAny = shift as any;
+      const shiftLocomotiveId =
+        shift.locomotive_id ||
+        (shiftAny.shiftLocomotive && shiftAny.shiftLocomotive.length > 0
+          ? shiftAny.shiftLocomotive[0].locomotive_id
+          : null);
+      return (
+        shiftLocomotiveId !== undefined &&
+        Number(shiftLocomotiveId) === locomotiveId
+      );
+    });
   };
 
   const handlePreviousWeek = () => {
@@ -60,7 +81,10 @@ export const LocomotivesCalendar: React.FC<LocomotivesCalendarProps> = ({
       {/* Calendar Header */}
       <div className="py-2 flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <button onClick={handlePreviousWeek} className="font-medium text-[48px]">
+          <button
+            onClick={handlePreviousWeek}
+            className="font-medium text-[48px]"
+          >
             «
           </button>
           <WeekSelector currentDate={currentDate} onDateChange={onDateChange} />
@@ -108,7 +132,10 @@ export const LocomotivesCalendar: React.FC<LocomotivesCalendarProps> = ({
 
           {/* Assigned Locomotives */}
           {locomotives.map((locomotive) => (
-            <tr key={locomotive.id} className="border-b hover:bg-gray-50 overflow-x-auto">
+            <tr
+              key={locomotive.id}
+              className="border-b hover:bg-gray-50 overflow-x-auto"
+            >
               <td className="p-4">{locomotive.name}</td>
               {weekDays.map((date) => (
                 <td key={format(date, "yyyy-MM-dd")} className="p-0 border">

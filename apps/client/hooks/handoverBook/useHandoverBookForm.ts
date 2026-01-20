@@ -214,6 +214,52 @@ export const useHandoverBookForm = (props?: UseHandoverBookFormProps) => {
     [getLocationNameById]
   );
 
+  const convertDDMMYYYYToYYYYMMDD = useCallback((dateStr: string): string => {
+    if (!dateStr) return "";
+    const ddMmYyyyDotRegex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+    if (ddMmYyyyDotRegex.test(dateStr)) {
+      const match = dateStr.match(ddMmYyyyDotRegex);
+      if (match) {
+        const [, day, month, year] = match;
+        return `${year}-${month}-${day}`;
+      }
+    }
+    const ddMmYyyySlashRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    if (ddMmYyyySlashRegex.test(dateStr)) {
+      const match = dateStr.match(ddMmYyyySlashRegex);
+      if (match) {
+        const [, day, month, year] = match;
+        return `${year}-${month}-${day}`;
+      }
+    }
+    const yyyyMmDdRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    if (yyyyMmDdRegex.test(dateStr)) {
+      return dateStr;
+    }
+    return dateStr;
+  }, []);
+
+  const convertYYYYMMDDToDDMMYYYY = useCallback((dateStr: string): string => {
+    if (!dateStr) return "";
+    const yyyyMmDdRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    if (yyyyMmDdRegex.test(dateStr)) {
+      const match = dateStr.match(yyyyMmDdRegex);
+      if (match) {
+        const [, year, month, day] = match;
+        return `${day}.${month}.${year}`;
+      }
+    }
+    const ddMmYyyyDotRegex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+    if (ddMmYyyyDotRegex.test(dateStr)) {
+      return dateStr;
+    }
+    const ddMmYyyySlashRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    if (ddMmYyyySlashRegex.test(dateStr)) {
+      return dateStr.replace(/\//g, ".");
+    }
+    return dateStr;
+  }, []);
+
   const formatShiftTimeToDateTimeLocal = useCallback(
     (timeValue: any, shiftDate?: string): string => {
       if (!timeValue) {
@@ -346,9 +392,11 @@ export const useHandoverBookForm = (props?: UseHandoverBookFormProps) => {
         if (dateValue) {
           try {
             const date = new Date(dateValue);
-            formattedDate = date.toISOString().split("T")[0] ?? "";
+            if (!isNaN(date.getTime())) {
+              formattedDate = format(date, "dd.MM.yyyy");
+            }
           } catch {
-            formattedDate = new Date().toISOString().split("T")[0] ?? "";
+            formattedDate = format(new Date(), "dd.MM.yyyy");
           }
         }
 
@@ -382,19 +430,15 @@ export const useHandoverBookForm = (props?: UseHandoverBookFormProps) => {
 
         const formatTimeString = (timeValue: any): string => {
           if (!timeValue) return "";
-          // If it's already a string, return it as-is
           if (typeof timeValue === "string") {
             return timeValue;
           }
-          // If it's a date object, format it as HH:mm
           try {
             const date = new Date(timeValue);
             if (!isNaN(date.getTime())) {
               return format(date, "HH:mm");
             }
-          } catch {
-            // If parsing fails, return as string
-          }
+          } catch {}
           return timeValue?.toString() || "";
         };
 
@@ -617,21 +661,19 @@ export const useHandoverBookForm = (props?: UseHandoverBookFormProps) => {
           if (firstShift) {
             let shiftDate = "";
             const shiftDateValue = firstShift.date;
-            if (shiftDateValue && typeof shiftDateValue === "string") {
+            if (shiftDateValue) {
               try {
                 const date = new Date(shiftDateValue);
-                const isoString = date.toISOString();
-                shiftDate =
-                  isoString.split("T")[0] ||
-                  new Date().toISOString().split("T")[0] ||
-                  "";
+                if (!isNaN(date.getTime())) {
+                  shiftDate = format(date, "dd.MM.yyyy");
+                } else {
+                  shiftDate = format(new Date(), "dd.MM.yyyy");
+                }
               } catch {
-                const defaultDate = new Date().toISOString();
-                shiftDate = defaultDate.split("T")[0] || "";
+                shiftDate = format(new Date(), "dd.MM.yyyy");
               }
             } else {
-              const defaultDate = new Date().toISOString();
-              shiftDate = defaultDate.split("T")[0] || "";
+              shiftDate = format(new Date(), "dd.MM.yyyy");
             }
 
             let locomotiveName = "";
@@ -809,12 +851,44 @@ export const useHandoverBookForm = (props?: UseHandoverBookFormProps) => {
       newErrors.shiftId = "Shift is required";
     }
 
-    if (!formData.date || !formData.date.trim()) {
+    let dateString = "";
+    if (!formData.date) {
       newErrors.date = "Date is required";
     } else {
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(formData.date)) {
-        newErrors.date = "Date must be in YYYY-MM-DD format";
+      let dateValue: string = "";
+      const dateField = formData.date as any;
+
+      if (dateField instanceof Date) {
+        if (isNaN(dateField.getTime())) {
+          newErrors.date = "Date is invalid";
+        } else {
+          const year = dateField.getFullYear();
+          const month = String(dateField.getMonth() + 1).padStart(2, "0");
+          const day = String(dateField.getDate()).padStart(2, "0");
+          dateValue = `${year}-${month}-${day}`;
+        }
+      } else if (typeof dateField === "string") {
+        dateValue = dateField.trim();
+      } else {
+        dateValue = String(dateField || "");
+      }
+
+      if (!dateValue) {
+        newErrors.date = "Date is required";
+      } else {
+        const yyyyMmDdRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+        const ddMmYyyyDotRegex = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+        const ddMmYyyySlashRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+        if (
+          !yyyyMmDdRegex.test(dateValue) &&
+          !ddMmYyyyDotRegex.test(dateValue) &&
+          !ddMmYyyySlashRegex.test(dateValue)
+        ) {
+          newErrors.date = "Date must be in DD.MM.YYYY format";
+        } else {
+          dateString = dateValue;
+        }
       }
     }
 
@@ -1032,9 +1106,38 @@ export const useHandoverBookForm = (props?: UseHandoverBookFormProps) => {
         }
       });
 
+      const convertDateToDDMMYYYY = (dateStr: string): string => {
+        if (!dateStr) return "";
+        const dateValue =
+          typeof dateStr === "string" ? dateStr : String(dateStr || "");
+        const ddMmYyyyRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+        if (ddMmYyyyRegex.test(dateValue)) {
+          return dateValue;
+        }
+        const yyyyMmDdRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+        if (yyyyMmDdRegex.test(dateValue)) {
+          const match = dateValue.match(yyyyMmDdRegex);
+          if (match) {
+            const [, year, month, day] = match;
+            return `${day}/${month}/${year}`;
+          }
+        }
+        return dateValue;
+      };
+
+      const dateField: any = formData.date;
+      let dateToSend = "";
+      if (typeof dateField === "string") {
+        dateToSend = convertDDMMYYYYToYYYYMMDD(dateField);
+      } else if (dateField instanceof Date) {
+        dateToSend = format(dateField, "yyyy-MM-dd");
+      } else {
+        dateToSend = convertDDMMYYYYToYYYYMMDD(String(dateField || ""));
+      }
+
       const handoverBookData: any = {
         locomotiveNumber: formData.locomotiveNumber,
-        date: formData.date,
+        date: dateToSend,
         trainDriverName: formData.trainDriverName,
         dutyStartTime: formData.dutyStartTime,
         dutyEndTime: formData.dutyEndTime,
@@ -1112,21 +1215,19 @@ export const useHandoverBookForm = (props?: UseHandoverBookFormProps) => {
     if (shift) {
       let shiftDate = "";
       const shiftDateValue = shift.date;
-      if (shiftDateValue && typeof shiftDateValue === "string") {
+      if (shiftDateValue) {
         try {
           const date = new Date(shiftDateValue);
-          const isoString = date.toISOString();
-          shiftDate =
-            isoString.split("T")[0] ||
-            new Date().toISOString().split("T")[0] ||
-            "";
+          if (!isNaN(date.getTime())) {
+            shiftDate = format(date, "dd.MM.yyyy");
+          } else {
+            shiftDate = format(new Date(), "dd.MM.yyyy");
+          }
         } catch {
-          const defaultDate = new Date().toISOString();
-          shiftDate = defaultDate.split("T")[0] || "";
+          shiftDate = format(new Date(), "dd.MM.yyyy");
         }
       } else {
-        const defaultDate = new Date().toISOString();
-        shiftDate = defaultDate.split("T")[0] || "";
+        shiftDate = format(new Date(), "dd.MM.yyyy");
       }
 
       let locomotiveName = "";

@@ -5,12 +5,13 @@ import { useCompany } from "@/providers/appProvider";
 import { STATUS } from "@/types/shared/global";
 
 export const useCustomerTable = (initialPage = 1, limit = 20) => {
+  const { company } = useCompany();
   const [tabValue, setTabValue] = useState<STATUS>("ACTIVE");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [timeFilter, setTimeFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState<any>(null);
   const [customers, setCustomers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: initialPage,
     limit: limit,
@@ -19,10 +20,8 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
   });
   const [error, setError] = useState<string | null>(null);
 
-  const { company } = useCompany();
-
   const fetchCustomers = useCallback(
-    async (page = 1, searchTerm = "") => {
+    async (page = 1, searchTermParam = "") => {
       setIsLoading(true);
       setError(null);
       try {
@@ -30,15 +29,12 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
           return;
         }
 
-        const response = await CustomerService.getAllCustomers(page, pagination.limit, company.id as number, tabValue, searchTerm);
+        const response = await CustomerService.getAllCustomers(page, pagination.limit, company.id as number, tabValue, searchTermParam);
 
         const newCustomers = response.data?.data || [];
 
-        if (page === 1) {
-          setCustomers(newCustomers);
-        } else {
-          setCustomers((prev) => [...prev, ...newCustomers]);
-        }
+        // Always replace customers for standard pagination
+        setCustomers(newCustomers);
 
         if (response.data.pagination) {
           setPagination({
@@ -63,23 +59,24 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
   );
 
   useEffect(() => {
-    fetchCustomers(1, "");
-  }, [fetchCustomers]);
+    fetchCustomers(pagination.page, searchTerm);
+  }, [pagination.page, searchTerm, fetchCustomers]);
 
   const handleLoadMoreCustomers = useCallback(() => {
     if (pagination.page < pagination.total_pages) {
-      fetchCustomers(pagination.page + 1, searchTerm);
+      setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
     }
-  }, [pagination, searchTerm, fetchCustomers]);
+  }, [pagination.page, pagination.total_pages]);
 
-  const handleSearch = useCallback(
-    (searchTerm: string) => {
-      setSearchTerm(searchTerm);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-      fetchCustomers(1, searchTerm);
-    },
-    [fetchCustomers]
-  );
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handleTabChange = useCallback((val: STATUS) => {
+    setTabValue(val);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
 
   const removeCustomer = useCallback((clientId: number) => {
     setCustomers((prevClients) => prevClients.filter((client: any) => client.id !== clientId));
@@ -108,7 +105,7 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
 
   return {
     tabValue,
-    setTabValue,
+    setTabValue: handleTabChange,
     handleSearch,
     handleTimeFilterChange,
     handleDateRangeChange,
@@ -121,9 +118,11 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
     pagination,
     handleLoadMoreCustomers,
     removeCustomer,
-    refetch: () => fetchCustomers(1, ""),
-    setCurrentPage: (page: number) => setPagination((prev) => ({ ...prev, page })),
+    refetch: () => fetchCustomers(pagination.page, searchTerm),
     currentPage: pagination.page,
     totalPages: pagination.total_pages,
+    setCurrentPage: (page: number) =>
+      setPagination((prev) => ({ ...prev, page })),
   };
 };
+

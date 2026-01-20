@@ -28,10 +28,10 @@ export const getHolidayActions = (callbacks: HolidayActionCallbacks) => {
     {
       label: tActions("edit"),
       element: (holiday: HolidayRange) => (
-        <Link href={`/settings/holidays/${holiday.id}/edit`} className="w-full block py-2 px-3 hover:bg-gray-100 transition-colors">
+        <Link href={`/settings/holidays/${holiday.id}/edit`} className="w-full block py-2 px-3 hover:bg-green-50 transition-colors">
           <span className="flex items-center gap-2 justify-center">
-            <Edit2Icon className="w-4 h-4 text-gray-800" />
-            <span className="text-sm text-gray-800">{tActions("edit")}</span>
+            <Edit2Icon className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-600">{tActions("edit")}</span>
           </span>
         </Link>
       ),

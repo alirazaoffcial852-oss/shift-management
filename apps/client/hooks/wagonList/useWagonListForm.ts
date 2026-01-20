@@ -36,11 +36,16 @@ export const useWagonListForm = (
   const [wagonListData, setWagonListData] = useState<WagonListResponse>();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [wagons, setWagons] = useState<Wagon[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    total_pages: 0,
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [timeFilter, setTimeFilter] = useState("");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [isLoading, setIsLoading] = useState(true);
   const [existingDocuments, setExistingDocuments] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<WagonFormData>({
@@ -783,37 +788,55 @@ export const useWagonListForm = (
 
   useEffect(() => {
     fetchWagons();
-  }, [currentPage, searchTerm, timeFilter, dateRange]);
+  }, [pagination.page, searchTerm, timeFilter, dateRange]);
 
   const fetchWagons = async () => {
+    setIsLoading(true);
     try {
-      const response = await WagonListService.getAllWagonLists({
-        page: currentPage,
-        search: searchTerm,
-        timeFilter,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-      });
-      setWagons(response.data);
-      setTotalPages(response.totalPages);
+      const response = await WagonListService.getAllWagonLists(
+        pagination.page,
+        pagination.limit,
+        searchTerm,
+        {
+          timeFilter,
+          startDate: dateRange.start,
+          endDate: dateRange.end,
+        }
+      );
+      if (response.data?.data) {
+        const { data: wagonsList, pagination: paginationData } = response.data;
+        if (wagonsList) {
+          setWagons(wagonsList);
+        }
+        if (paginationData) {
+          setPagination({
+            page: paginationData.page,
+            limit: paginationData.limit,
+            total: paginationData.total,
+            total_pages: paginationData.total_pages,
+          });
+        }
+      }
     } catch (error) {
       console.error("Error fetching wagons:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleTimeFilterChange = (filter: string) => {
     setTimeFilter(filter);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleDateRangeChange = (range: { start: string; end: string }) => {
     setDateRange(range);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   useEffect(() => {
@@ -1072,12 +1095,13 @@ export const useWagonListForm = (
     profile,
     allWagonLists,
     wagons,
-    currentPage,
-    totalPages,
-    setCurrentPage,
+    currentPage: pagination.page,
+    totalPages: pagination.total_pages,
+    onPageChange: (page: number) => setPagination((prev) => ({ ...prev, page })),
     handleSearch,
     handleTimeFilterChange,
     handleDateRangeChange,
     existingDocuments,
+    isLoading,
   };
 };

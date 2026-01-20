@@ -66,6 +66,7 @@ const ShiftInformation = ({
     closeWagonModal,
     handleWagonSelection,
     handleWagonFilterChange,
+    resetWagonFilters,
     fetchWagons,
     handleProductChange,
     handleFileUpload,
@@ -384,6 +385,7 @@ const ShiftInformation = ({
         selectedWagonIds={getCurrentRowWagons(currentRowId)}
         filters={wagonFilters}
         onFilterChange={handleWagonFilterChange}
+        onResetFilters={resetWagonFilters}
         onWagonSelection={handleWagonSelection}
         currentPurpose={
           formData.routePlanning.find((r) => r.id === currentRowId)

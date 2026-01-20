@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import BvProjectService from "@/services/bvProject";
 import { useCompany } from "@/providers/appProvider";
 import { Project } from "@/types/project";
@@ -11,69 +11,39 @@ interface FetchBvProjectResponse {
     pagination: {
       total: number;
       totalPages: number;
+      page: number;
+      limit: number;
     };
   };
 }
 
 export const useBvProjectTable = () => {
+  const { company } = useCompany();
   const [tabValue, setTabValue] = useState<STATUS>("ACTIVE");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [bvProjects, setBvProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const { company } = useCompany();
-
   const limit = 20;
+  const isManualModeRef = React.useRef(false);
 
-  const fetchBvProject = useCallback(
+  const fetchBvProjects = useCallback(
     async (
-      currentPage: number = 0,
-      companyId: number = company?.id || 0,
-      status: STATUS,
+      page = 1,
+      searchTermParam = "",
       projectId?: number
     ): Promise<FetchBvProjectResponse | null> => {
       setIsLoading(true);
       setError(null);
-      try {
-        if (!company) {
-          return null;
-        }
-        const response = await BvProjectService.getAllBvProjects(
-          currentPage,
-          limit,
-          companyId,
-          status,
-          projectId
-        );
-        setBvProjects(response.data.data || []);
-
-        setTotalCount(response.data.pagination.total || 0);
-        setTotalPages(
-          Math.ceil((response.data.pagination.totalPages || 0) / limit)
-        );
-        return response;
-      } catch (err: any) {
-        const errorMsg = err.message || "Failed to fetch bvProjects";
-        setError(errorMsg);
-        console.error("Error fetching bvProjects:", err);
-        return null;
-      } finally {
-        setIsLoading(false);
+      if (projectId !== undefined) {
+        isManualModeRef.current = true;
       }
-    },
-    [currentPage, limit, company, tabValue]
-  );
-
-  const fetchBvProjectsWithSearch = useCallback(
-    async (page = 1, searchTerm = "", projectId?: number) => {
-      setIsLoading(true);
-      setError(null);
       try {
-        if (!company) {
+        if (!company?.id) {
           return null;
         }
         const response = await BvProjectService.getAllBvProjects(
@@ -82,7 +52,7 @@ export const useBvProjectTable = () => {
           company.id,
           tabValue,
           projectId,
-          searchTerm
+          searchTermParam
         );
 
         const newBvProjects = response.data.data || [];
@@ -94,9 +64,8 @@ export const useBvProjectTable = () => {
         }
 
         setTotalCount(response.data.pagination.total || 0);
-        setTotalPages(
-          Math.ceil((response.data.pagination.totalPages || 0) / limit)
-        );
+        setTotalPages(response.data.pagination.totalPages || 0);
+
         return response;
       } catch (err: any) {
         const errorMsg = err.message || "Failed to fetch BV projects";
@@ -110,15 +79,29 @@ export const useBvProjectTable = () => {
     [company, limit, tabValue]
   );
 
+  useEffect(() => {
+    if (isManualModeRef.current || !company?.id) {
+      return;
+    }
+    fetchBvProjects(currentPage, searchTerm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchTerm, company?.id]);
+
+  const handleSearch = useCallback((value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleTabChange = useCallback((val: STATUS) => {
+    setTabValue(val);
+    setCurrentPage(1);
+  }, []);
+
   const updateBvProjectStatus = useCallback((bvProjectId: number) => {
     setBvProjects((prevProjects) =>
       prevProjects.filter((bvProject) => bvProject.id !== bvProjectId)
     );
   }, []);
-
-  useEffect(() => {
-    fetchBvProject(currentPage, company?.id || 0, tabValue);
-  }, [fetchBvProject, currentPage, company?.id, tabValue]);
 
   const removeBvProject = useCallback((clientId: number) => {
     setBvProjects((prevClients) =>
@@ -126,14 +109,9 @@ export const useBvProjectTable = () => {
     );
   }, []);
 
-  const handleSearch = useCallback((value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  }, []);
-
   return {
     tabValue,
-    setTabValue,
+    setTabValue: handleTabChange,
     handleSearch,
     setBvProjects,
     bvProjects: bvProjects,
@@ -145,7 +123,7 @@ export const useBvProjectTable = () => {
     totalPages,
     setCurrentPage,
     removeBvProject,
-    refetch: fetchBvProject,
-    fetchBvProjectsWithSearch,
+    refetch: () => fetchBvProjects(currentPage, searchTerm),
+    fetchBvProjectsWithSearch: fetchBvProjects,
   };
 };

@@ -1,5 +1,19 @@
-export interface Customer {
-  id: number;
+import { Pagination } from "./pagination";
+import { BaseEntityRequired, EXTENDED_STATUS } from "./shared/global";
+
+export type TrackCostStatus = "FIXED" | "PENDING" | "INVOICED" | "APPROVED" | "BILLED";
+
+export type Proximity = "NEARBY" | "FAR_AWAY";
+
+export type StartDay = "YES" | "NO";
+
+export type ActAs = "EMPLOYEE" | "ADMIN";
+
+export type Gender = "MALE" | "FEMALE" | "OTHER";
+
+export type TollCostType = "FLAT" | "PERCENTAGE";
+
+export interface TrackCostCustomer extends BaseEntityRequired {
   company_id: number;
   name: string;
   phone: string;
@@ -10,109 +24,82 @@ export interface Customer {
   country: string;
   city: string;
   postal_code: string;
-  status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
-  created_at: string;
-  updated_at: string;
+  status: EXTENDED_STATUS;
 }
 
-export interface Project {
-  id: number;
+export interface TrackCostProject extends BaseEntityRequired {
   customer_id: number;
   company_id: number;
   name: string;
-  created_at: string;
-  updated_at: string;
-  status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+  status: EXTENDED_STATUS;
 }
 
-export interface BvProject {
-  id: number;
+export interface TrackCostBvProject extends BaseEntityRequired {
   project_id: number;
   company_id: number;
   name: string;
-  created_at: string;
-  updated_at: string;
-  status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+  status: EXTENDED_STATUS;
 }
 
-export interface Product {
-  id: number;
+export interface TrackCostProduct extends BaseEntityRequired {
   company_id: number;
   customer_id: number;
   name: string;
   is_locomotive: boolean;
   has_toll_cost: boolean;
   toll_cost: string;
-  toll_cost_type: "FLAT" | "PERCENTAGE";
+  toll_cost_type: TollCostType;
   has_flat_price: boolean;
   flat_price: string;
   shift_flat_rate: string;
-  status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
-  created_at: string;
-  updated_at: string;
+  status: EXTENDED_STATUS;
   show_in_dropdown: boolean;
 }
 
-export interface Company {
-  id: number;
+export interface TrackCostCompany extends BaseEntityRequired {
   name: string;
-  status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
-  created_at: string;
-  updated_at: string;
+  status: EXTENDED_STATUS;
 }
 
-export interface Employee {
-  id: number;
+export interface TrackCostEmployee extends BaseEntityRequired {
   user_id: number;
   role_id: number;
   company_id: number;
   phone: string;
   date_of_birth: string;
   hiring_date: string;
-  gender: "MALE" | "FEMALE" | "OTHER";
+  gender: Gender;
   address: string;
   country: string;
   city: string;
   postal_code: string;
-  status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
-  created_at: string;
-  updated_at: string;
+  status: EXTENDED_STATUS;
 }
 
-export interface Role {
-  id: number;
+export interface TrackCostRole extends BaseEntityRequired {
   name: string;
   short_name: string;
-  act_as: "EMPLOYEE" | "ADMIN";
+  act_as: ActAs;
   has_train_driver: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface ShiftPersonnel {
-  id: number;
+export interface TrackCostShiftPersonnel extends BaseEntityRequired {
   shift_role_id: number;
   employee_id: number;
-  created_at: string;
-  updated_at: string;
-  employee: Employee;
+  employee: TrackCostEmployee;
 }
 
-export interface ShiftRole {
-  id: number;
+export interface TrackCostShiftRole extends BaseEntityRequired {
   shift_id: number;
   role_id: number;
-  proximity: "NEARBY" | "FAR_AWAY";
+  proximity: Proximity;
   break_duration: string;
-  start_day: "YES" | "NO";
-  created_at: string;
-  updated_at: string;
-  shiftPersonnel: ShiftPersonnel[];
-  role: Role;
+  start_day: StartDay;
+  shiftPersonnel: TrackCostShiftPersonnel[];
+  role: TrackCostRole;
 }
 
-export interface ShiftDetail {
-  id: number;
+export interface TrackCostShiftDetail extends BaseEntityRequired {
   shift_id: number;
   location: string;
   type_of_operation_id: number;
@@ -124,31 +111,22 @@ export interface ShiftDetail {
   note: string;
   has_document: boolean;
   cost_center_id: number;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface ShiftTrain {
-  id: number;
+export interface TrackCostShiftTrain extends BaseEntityRequired {
   shift_id: number;
   train_no: string;
   departure_location: string;
   arrival_location: string;
   freight_transport: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface ShiftDocument {
-  id: number;
+export interface TrackCostShiftDocument extends BaseEntityRequired {
   shift_id: number;
   document: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface TrackCostShift {
-  id: number;
+export interface TrackCostShift extends BaseEntityRequired {
   customer_id: number;
   project_id: number;
   bv_project_id: number;
@@ -158,20 +136,18 @@ export interface TrackCostShift {
   date: string;
   start_time: string;
   end_time: string;
-  status: "FIXED" | "PENDING" | "INVOICED" | "APPROVED" | "BILLED";
-  created_at: string;
-  updated_at: string;
-  customer: Customer;
-  project: Project;
-  bv_project: BvProject;
-  product: Product;
+  status: TrackCostStatus;
+  customer: TrackCostCustomer;
+  project: TrackCostProject;
+  bv_project: TrackCostBvProject;
+  product: TrackCostProduct;
   dispatcher: any;
-  company: Company;
-  shiftDetail: ShiftDetail[];
+  company: TrackCostCompany;
+  shiftDetail: TrackCostShiftDetail[];
   shiftLocomotive: any[];
-  shiftRole: ShiftRole[];
-  shiftTrain: ShiftTrain[];
-  shiftDocument: ShiftDocument[];
+  shiftRole: TrackCostShiftRole[];
+  shiftTrain: TrackCostShiftTrain[];
+  shiftDocument: TrackCostShiftDocument[];
   timesheets: any[];
   shift_toll_cost: any[];
 }
@@ -181,21 +157,9 @@ export interface TrackCostResponse {
   message: string;
   data: {
     data: TrackCostShift[];
-    pagination: {
-      total: number;
-      page: number;
-      limit: number;
-      total_pages: number;
-    };
+    pagination: Pagination;
   };
 }
-
-export type TrackCostStatus =
-  | "FIXED"
-  | "PENDING"
-  | "INVOICED"
-  | "APPROVED"
-  | "BILLED";
 
 export interface TrackCostActionCallbacks {
   onStatusUpdate: (id: number, status: TrackCostStatus) => void;

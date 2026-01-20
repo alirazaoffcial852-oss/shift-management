@@ -60,7 +60,7 @@ export const useBvProjectForm = (id?: number, onclose?: () => void) => {
               page: response.data.pagination.page,
               limit: response.data.pagination.limit,
               total: response.data.pagination.total,
-              total_pages: response.data.pagination.total_pages,
+              total_pages: response.data.pagination.totalPages,
             });
           }
         }

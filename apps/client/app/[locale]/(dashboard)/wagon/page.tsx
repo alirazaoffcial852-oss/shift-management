@@ -10,5 +10,5 @@ interface WagonPageProps {
 
 export default async function WagonPage({ searchParams }: WagonPageProps) {
   const resolvedSearchParams = await searchParams;
-  return <WagonTableComponent searchParams={resolvedSearchParams} />;
+  return <WagonTableComponent searchParams={resolvedSearchParams}  />;
 }

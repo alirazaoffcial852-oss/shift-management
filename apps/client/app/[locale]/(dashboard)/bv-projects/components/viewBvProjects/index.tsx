@@ -30,6 +30,7 @@ const ViewBvProjects = () => {
     removeBvProject,
     tabValue,
     setTabValue,
+    isLoading,
   } = useBvProjectTable();
 
   const columns = getColumns();
@@ -89,6 +90,7 @@ const ViewBvProjects = () => {
         onPageChange={setCurrentPage}
         onSearchChange={handleSearch}
         actionsHeader={tBvProjects("actions")}
+        isLoading={isLoading}
       />
     </div>
   );

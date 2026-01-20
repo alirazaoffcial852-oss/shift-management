@@ -11,7 +11,7 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
   const [tabValue, setTabValue] = useState<STATUS>("ACTIVE");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: initialPage,
     limit: limit,
@@ -21,7 +21,7 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = useCallback(
-    async (page = 1, searchTerm = "") => {
+    async (page = 1, searchTermParam = "") => {
       setIsLoading(true);
       setError(null);
       try {
@@ -34,16 +34,13 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
           pagination.limit,
           company.id as number,
           tabValue,
-          searchTerm
+          searchTermParam
         );
 
         const newProducts = response.data?.data || [];
 
-        if (page === 1) {
-          setProducts(newProducts);
-        } else {
-          setProducts((prev) => [...prev, ...newProducts]);
-        }
+        // Always replace products for standard pagination
+        setProducts(newProducts);
 
         if (response.data.pagination) {
           setPagination({
@@ -68,23 +65,24 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
   );
 
   useEffect(() => {
-    fetchProducts(1, "");
-  }, [fetchProducts]);
+    fetchProducts(pagination.page, searchTerm);
+  }, [pagination.page, searchTerm, fetchProducts]);
 
   const handleLoadMore = useCallback(() => {
     if (pagination.page < pagination.total_pages) {
-      fetchProducts(pagination.page + 1, searchTerm);
+      setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
     }
-  }, [pagination, searchTerm, fetchProducts]);
+  }, [pagination.page, pagination.total_pages]);
 
-  const handleSearch = useCallback(
-    (searchTerm: string) => {
-      setSearchTerm(searchTerm);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-      fetchProducts(1, searchTerm);
-    },
-    [fetchProducts]
-  );
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handleTabChange = useCallback((val: STATUS) => {
+    setTabValue(val);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
 
   const updateProductStatus = useCallback((productId: number) => {
     setProducts((prevProducts) =>
@@ -130,7 +128,7 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
 
   return {
     tabValue,
-    setTabValue,
+    setTabValue: handleTabChange,
     handleSearch,
     setProducts,
     products: formattedProducts,
@@ -141,12 +139,13 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
     pagination,
     handleLoadMore,
     removeProduct,
-    refetch: () => fetchProducts(1, ""),
+    refetch: () => fetchProducts(pagination.page, searchTerm),
     duplicateProduct,
     currentPage: pagination.page,
+    totalPages: pagination.total_pages,
     setCurrentPage: (page: number) =>
       setPagination((prev) => ({ ...prev, page })),
-    totalPages: pagination.total_pages,
     fetchProducts,
   };
 };
+

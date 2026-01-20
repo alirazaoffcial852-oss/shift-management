@@ -68,6 +68,9 @@ const LocomotiveForm: React.FC<LocomoticeFormProps> = ({ id }) => {
             />
           </>
         )}
+        {errors?.image && errors.image.length > 0 && (
+          <p className="text-red-500 text-sm mt-2">{errors.image[0]}</p>
+        )}
       </div>
       <div className="flex justify-end mt-6 md:mt-10 p-2 md:p-4">
         <SMSButton

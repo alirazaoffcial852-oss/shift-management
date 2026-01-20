@@ -25,6 +25,7 @@ interface WagonModalProps {
   filters: WagonFilters;
   onFilterChange: (field: keyof WagonFilters, value: string) => void;
   onWagonSelection: (wagonId: string) => void;
+  onResetFilters: () => void;
   currentPurpose?: string;
   pickupDate?: string;
   onPickupDateChange?: (date: string) => void;
@@ -39,6 +40,7 @@ const WagonModal: React.FC<WagonModalProps> = ({
   selectedWagonIds,
   filters,
   onFilterChange,
+  onResetFilters,
   onWagonSelection,
   currentPurpose,
   pickupDate,
@@ -201,13 +203,13 @@ const WagonModal: React.FC<WagonModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t(`titles.${modalType}.${wagonType}`)}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pb-4">
-          <div className="grid grid-cols-7 gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="grid grid-cols-6 gap-4 p-4 bg-gray-50 rounded-lg">
             <SMSCombobox
               placeholder={t("filters.location")}
               value={filters.location}
@@ -240,10 +242,18 @@ const WagonModal: React.FC<WagonModalProps> = ({
               options={railOptions}
               className="w-full"
             />
+            <SMSCombobox
+              placeholder={t("tableHeaders.nextStatus")}
+              value={filters.nextStatus}
+              onValueChange={(value) => onFilterChange("nextStatus", value)}
+              options={statusOptions}
+              className="w-full"
+            />
             <SMSInput
               type="date"
               value={filters.date}
               onChange={(e) => onFilterChange("date", e.target.value)}
+              placeholder={t("filters.date")}
               className="w-full"
             />
           </div>
@@ -264,6 +274,9 @@ const WagonModal: React.FC<WagonModalProps> = ({
                   </th>
                   <th className="border border-gray-300 px-4 py-2 text-left">
                     {t("tableHeaders.currentLocation")}
+                  </th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">
+                    {t("tableHeaders.arrivalLocation")}
                   </th>
                   <th className="border border-gray-300 px-4 py-2 text-left">
                     {t("tableHeaders.loadedEmptyLocation")}
@@ -329,10 +342,38 @@ const WagonModal: React.FC<WagonModalProps> = ({
                         </span>
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
-                        {wagon.nextStatus}
+                        {wagon.nextStatus === "No Changes" ? (
+                          wagon.nextStatus
+                        ) : (
+                          <span
+                            className={`px-2 py-1 rounded text-xs ${
+                              wagon.nextStatus === "EMPTY"
+                                ? "bg-gray-100 text-gray-600"
+                                : wagon.nextStatus === "PLANNED_TO_BE_LOADED" ||
+                                    wagon.nextStatus === "SHOULD_BE_LOADED" ||
+                                    wagon.nextStatus ===
+                                      "PLANNED_TO_BE_EMPTY" ||
+                                    wagon.nextStatus === "SHOULD_BE_EMPTY"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : wagon.nextStatus === "LOADED"
+                                    ? "bg-green-100 text-green-800"
+                                    : wagon.nextStatus === "DAMAGED"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {statusLabelMap[wagon.nextStatus] ||
+                              wagon.nextStatus}
+                          </span>
+                        )}
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
                         {formatLocation(wagon.currentLocation)}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        {wagon.arrivalLocation
+                          ? formatLocation(wagon.arrivalLocation)
+                          : t("unknown")}
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
                         {wagon.loadedEmptyLocation}
@@ -375,16 +416,28 @@ const WagonModal: React.FC<WagonModalProps> = ({
           </div>
         )}
 
-        <DialogFooter>
-          <SMSButton variant="outline" onClick={onClose} className="mr-2">
-            {t("buttons.cancel")}
-          </SMSButton>
-          <SMSButton
-            onClick={onClose}
-            className="bg-[#3E8258] hover:bg-[#3E8258]/90 text-white"
-          >
-            {t("buttons.done")}
-          </SMSButton>
+        <DialogFooter className="flex justify-between items-center w-full">
+          <div className="flex-1">
+            <SMSButton
+              variant="outline"
+              type="button"
+              onClick={onResetFilters}
+              className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 px-6"
+            >
+              Reset Filter
+            </SMSButton>
+          </div>
+          <div className="flex gap-2">
+            <SMSButton variant="outline" onClick={onClose} className="px-6">
+              {t("buttons.cancel")}
+            </SMSButton>
+            <SMSButton
+              onClick={onClose}
+              className="bg-[#3E8258] hover:bg-[#3E8258]/90 text-white px-8"
+            >
+              {t("buttons.done")}
+            </SMSButton>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

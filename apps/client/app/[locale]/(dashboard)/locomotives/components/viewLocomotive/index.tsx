@@ -21,16 +21,19 @@ const ViewLocomotive = () => {
     setCurrentPage,
     handleSearch,
     archiveLocomotive,
+    deleteLocomotive,
     tabValue,
     setTabValue,
     updateLocomotiveStatus,
+    isLoading,
   } = useLocomotiveTable();
 
   const columns = useLocomotiveColumns();
 
   const actions = useLocomotiveActions({
-    onDelete: archiveLocomotive,
+    onDelete: deleteLocomotive,
     onStatusUpdate: updateLocomotiveStatus,
+    onArchive: archiveLocomotive,
   });
 
   const taction = useTranslations("actions");
@@ -67,7 +70,10 @@ const ViewLocomotive = () => {
         onPageChange={setCurrentPage}
         onSearchChange={handleSearch}
         dateTimeFilter={true}
+        search
+        pagination
         actionsHeader={tLocomotives("actions")}
+        isLoading={isLoading}
       />
     </div>
   );

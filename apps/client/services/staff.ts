@@ -1,4 +1,5 @@
 import { STATUS } from "@/types/shared/global";
+import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 
 class StaffService {
@@ -6,11 +7,18 @@ class StaffService {
     page: number,
     limit: number,
     company_id: number,
-    status: STATUS = "ACTIVE"
+    status: STATUS = "ACTIVE",
+    search?: string
   ) {
-    return await http.get(
-      `/staff?page=${page}&limit=${limit}&company_id=${company_id}&status=${status}`
-    );
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      company_id,
+      status,
+      search,
+    });
+
+    return await http.get(`/staff?${searchParams.toString()}`);
   }
 
   async getStaffById(id: number) {

@@ -78,7 +78,7 @@ export const useReasonTable = (t?: TranslationFunction) => {
         const response = await ReasonService.getAllReasons(cleanParams);
         setReasons(response.data.data || []);
         setTotalCount(response.data.pagination.total || 0);
-        setTotalPages(response.data.pagination.totalPages || 0);
+        setTotalPages(response.data.pagination.total_pages || 0);
         return response;
       } catch (err: any) {
         const errorMsg = err.message || "Failed to fetch reasons";

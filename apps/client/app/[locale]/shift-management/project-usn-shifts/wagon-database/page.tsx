@@ -85,8 +85,9 @@ const WagonDatabasePage = () => {
       );
 
       if (response?.data?.data) {
+        const rawLocations = locations;
         const wagonData: WagonData[] = response.data.data.map((wagon: any) => {
-          const location = locations.find(
+          const location = rawLocations.find(
             (loc) => loc.id === wagon.location_id
           );
           const locationName = location?.name || "N/A";
@@ -117,10 +118,7 @@ const WagonDatabasePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, locations]);
-
-  useEffect(() => {
-    fetchWagons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     filters.date,
     filters.status,
@@ -129,8 +127,11 @@ const WagonDatabasePage = () => {
     filters.location,
     filters.nextStatus,
     filters.loadedLocation,
-    fetchWagons,
   ]);
+
+  useEffect(() => {
+    fetchWagons();
+  }, [fetchWagons]);
 
   const filteredWagons = wagons;
 
@@ -183,12 +184,14 @@ const WagonDatabasePage = () => {
           wagons={filteredWagons}
           filters={filters}
           onFilterChange={handleFilterChange}
+          locations={locations}
         />
       ) : (
         <RailView
           wagons={filteredWagons}
           filters={filters}
           onFilterChange={handleFilterChange}
+          locations={locations}
         />
       )}
     </div>

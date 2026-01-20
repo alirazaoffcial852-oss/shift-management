@@ -28,6 +28,7 @@ const ViewEmployee = () => {
     updateEmployeeStatus,
     tabValue,
     setTabValue,
+    isLoading,
   } = useEmployeeTable();
   const { hasPermission } = usePermission();
 
@@ -81,7 +82,9 @@ const ViewEmployee = () => {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
         onSearchChange={handleSearch}
+        search={true}
         actionsHeader={tEmployees("actions")}
+        isLoading={isLoading}
       />
     </div>
   );

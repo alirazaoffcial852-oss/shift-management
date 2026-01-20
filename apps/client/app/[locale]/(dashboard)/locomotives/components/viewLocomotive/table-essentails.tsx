@@ -22,9 +22,10 @@ export const useLocomotiveColumns = () => {
 export type LocomotiveActionCallbacks = {
   onDelete: (id: number) => void;
   onStatusUpdate: (id: number, status: STATUS) => void;
+  onArchive?: (id: number) => void;
 };
 
-export const useLocomotiveActions = ({ onDelete, onStatusUpdate }: LocomotiveActionCallbacks) => {
+export const useLocomotiveActions = ({ onDelete, onStatusUpdate, onArchive }: LocomotiveActionCallbacks) => {
   const tActions = useTranslations("actions");
   const tLabel = useTranslations("components.sidebar");
   const tMessages = useTranslations("messages");
@@ -34,13 +35,42 @@ export const useLocomotiveActions = ({ onDelete, onStatusUpdate }: LocomotiveAct
       label: tActions("edit"),
       element: (locomotive: Locomotive) =>
         locomotive.status !== "ARCHIVED" ? (
-          <Link href={`/locomotives/${locomotive.id}/edit`} className="w-full block py-2 px-3 hover:bg-gray-100 transition-colors">
+          <Link href={`/locomotives/${locomotive.id}/edit`} className="w-full block py-2 px-3 hover:bg-green-50 transition-colors">
             <span className="flex items-center gap-2">
-              <Edit2Icon className="w-4 h-4 text-gray-800" />
-              <span className="text-sm text-gray-800">{tActions("edit")}</span>
+              <Edit2Icon className="w-4 h-4 text-green-600" />
+              <span className="text-sm text-green-600">{tActions("edit")}</span>
             </span>
           </Link>
         ) : null,
+    },
+    {
+      label: tActions("delete"),
+      element: (locomotive: Locomotive) => (
+        <ActionButton
+          item={{ ...locomotive, id: locomotive.id ?? 0 }}
+          customConfig={{
+            show: locomotive.status !== "ARCHIVED",
+            title: tActions("delete"),
+            description: `${tMessages("deleteConfirm") || "Are you sure you want to delete"} ${tLabel("locomotive")} ${tMessages("commonMessage") || ""} <b>${locomotive.name}</b>? ${tMessages("deleteWarning") || "This action cannot be undone."}`,
+            confirmText: tActions("delete"),
+            buttonText: tActions("delete"),
+            variant: "destructive",
+            icon: Trash2,
+            style: "hover:bg-red-50 text-red-600",
+          }}
+          services={{
+            deleteLocomotive: async (id: number) => {
+              try {
+                const response = await LocomotiveService.deleteLocomotive(id);
+                onDelete(id);
+                toast.success(response?.message || "Locomotive deleted successfully");
+              } catch (error) {
+                toast.error((error as any)?.data?.message || "Failed to delete locomotive");
+              }
+            },
+          }}
+        />
+      ),
     },
     {
       label: tActions("archive"),
@@ -53,15 +83,19 @@ export const useLocomotiveActions = ({ onDelete, onStatusUpdate }: LocomotiveAct
             description: `${tMessages("archiveConfirm")}  ${tLabel("locomotive")}  ${tMessages("commonMessage")} <b>${locomotive.name}</b>? ${tMessages("archiveWarning")}`,
             confirmText: tActions("archive"),
             buttonText: tActions("archive"),
-            variant: "destructive",
+            variant: "default",
             icon: Trash2,
-            style: "hover:bg-red-50 text-red-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             archiveLocomotive: async (id: number) => {
               try {
                 const response = await LocomotiveService.archiveLocomotive(id);
-                onStatusUpdate(id, "ARCHIVED");
+                if (onArchive) {
+                  onArchive(id);
+                } else {
+                  onStatusUpdate(id, "ARCHIVED");
+                }
                 toast.success(response?.message);
               } catch (error) {
                 toast.error((error as any)?.data?.message);

@@ -31,6 +31,7 @@ const ViewProjects = () => {
     removeProject,
     tabValue,
     setTabValue,
+    isLoading,
   } = useProjectTable();
 
   const columns = getColumns();
@@ -88,6 +89,7 @@ const ViewProjects = () => {
         onPageChange={setCurrentPage}
         onSearchChange={handleSearch}
         actionsHeader={tProjects("actions")}
+        isLoading={isLoading}
       />
     </div>
   );

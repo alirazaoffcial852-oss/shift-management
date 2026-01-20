@@ -1,5 +1,7 @@
 import { Shift } from "@/types/shift";
-import { startOfWeek, endOfWeek, eachDayOfInterval, format } from "date-fns";
+import { startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
+import { getDateKey, formatDateApi } from "./common";
+import { groupBy } from "./common/transform";
 
 export const WEEKDAYS = [
   "Monday",
@@ -65,18 +67,8 @@ export const getWeekDays = (date: Date) => {
 };
 
 export const groupShiftsByDate = (shifts: Shift[]) => {
-  return shifts.reduce(
-    (acc, shift) => {
-      const dateKey = shift.date
-        ? format(new Date(shift.date), "yyyy-MM-dd")
-        : "Invalid Date";
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(shift);
-      return acc;
-    },
-    {} as { [key: string]: Shift[] }
+  return groupBy(shifts, (shift) =>
+    shift.date ? formatDateApi(new Date(shift.date)) || "Invalid Date" : "Invalid Date"
   );
 };
 
@@ -85,7 +77,7 @@ export const getShiftsForDay = (
   date: Date,
   groupedShifts: { [key: string]: Shift[] }
 ) => {
-  const dateKey = format(date, "yyyy-MM-dd");
+  const dateKey = getDateKey(date);
   return groupedShifts[dateKey] || [];
 };
 export const handlePreviousMonth = (

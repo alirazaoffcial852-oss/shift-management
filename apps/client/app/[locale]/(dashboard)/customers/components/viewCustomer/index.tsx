@@ -10,11 +10,8 @@ import { useCustomerTable } from "@/hooks/customer/useCustomerTable";
 import { Customer } from "@/types/customer";
 import { OPTIONS } from "@/constants/tabsOption.constant";
 import { useTranslations } from "next-intl";
-import {
-  customerActionCallbacks,
-  getActions,
-  getColumns,
-} from "./table-essentails";
+import { getActions, getColumns } from "./table-essentails";
+import { CustomerActionCallbacks } from "@/types/components/table";
 import { usePermission } from "@/hooks/usePermission";
 
 const ViewCustomer = () => {
@@ -34,9 +31,10 @@ const ViewCustomer = () => {
     removeCustomer,
     tabValue,
     setTabValue,
+    isLoading,
   } = useCustomerTable();
 
-  const actionCallbacks: customerActionCallbacks = {
+  const actionCallbacks: CustomerActionCallbacks = {
     onDelete: removeCustomer,
     onStatusUpdate: updateCustomerStatus,
   };
@@ -96,6 +94,7 @@ const ViewCustomer = () => {
         onSearchChange={handleSearch}
         dateTimeFilter={true}
         actionsHeader={tCustomers("actions")}
+        isLoading={isLoading}
       />
     </div>
   );

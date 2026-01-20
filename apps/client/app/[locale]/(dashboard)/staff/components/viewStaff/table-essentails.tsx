@@ -33,11 +33,11 @@ export const getActions = () => {
       element: (staff: Staff) => (
         <Link
           href={`/staff/${staff.id}/edit`}
-          className="w-full block py-2 px-3 hover:bg-gray-100 transition-colors"
+          className="w-full block py-2 px-3 hover:bg-green-50 transition-colors"
         >
           <span className="flex items-center gap-2">
-            <Edit2Icon className="w-4 h-4 text-gray-800" />
-            <span className="text-sm text-gray-800">{tActions("edit")}</span>
+            <Edit2Icon className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-600">{tActions("edit")}</span>
           </span>
         </Link>
       ),
@@ -91,9 +91,9 @@ export const getActions = () => {
             description: `${tMessages("archiveConfirm")} ${tLabel("staff")}  ${tMessages("commonMessage")} <b>${staff.name}</b>?`,
             confirmText: tActions("archive"),
             buttonText: tActions("archive"),
-            variant: "destructive",
+            variant: "default",
             icon: Archive,
-            style: "hover:bg-red-50 text-blue-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             archivedStaff: async (id: number) => {
@@ -126,9 +126,9 @@ export const getActions = () => {
             description: `${tMessages("activateConfirm")} ${tLabel("staff")}  ${tMessages("commonMessage")} <b>${staff.name}</b>?`,
             confirmText: tActions("activate"),
             buttonText: tActions("activate"),
-            variant: "destructive",
+            variant: "default",
             icon: Activity,
-            style: "hover:bg-red-50 text-blue-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             activateStaff: async (id: number) => {

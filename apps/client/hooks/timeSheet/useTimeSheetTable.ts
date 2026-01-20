@@ -19,10 +19,13 @@ export const useTimeSheetTable = (initialPage = 1, limit = 20) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [timeSheets, setTimeSheets] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [totalPages, setTotalPages] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: initialPage,
+    limit: limit,
+    total: 0,
+    total_pages: 0,
+  });
 
   const { company } = useCompany();
 
@@ -31,10 +34,24 @@ export const useTimeSheetTable = (initialPage = 1, limit = 20) => {
     setError(null);
     try {
       if (!company && isClient) return;
-      const response = await TimeSheetService.getTimeSheet(currentPage, limit, status, company?.id.toString(), employeeId);
-      setTimeSheets(response.data.data || []);
-      setTotalCount(response.data.pagination.total || 0);
-      setTotalPages(Math.ceil((response.data.pagination.totalPages || 0) / limit));
+      const response = await TimeSheetService.getTimeSheet(
+        pagination.page,
+        pagination.limit,
+        status,
+        company?.id.toString(),
+        employeeId,
+        searchTerm
+      );
+      if (response.data) {
+        setTimeSheets(response.data.data || []);
+        if (response.data.pagination) {
+          setPagination((prev) => ({
+            ...prev,
+            total: response.data.pagination.total || 0,
+            total_pages: response.data.pagination.totalPages || 0,
+          }));
+        }
+      }
       return response;
     } catch (err: any) {
       const errorMsg = err.message || "Failed to fetch timeSheets";
@@ -44,7 +61,7 @@ export const useTimeSheetTable = (initialPage = 1, limit = 20) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, limit, company]);
+  }, [pagination.page, pagination.limit, status, company, employeeId, searchTerm, isClient]);
 
   const updateTimeSheetStatus = useCallback((timeSheetId: number[]) => {
     setTimeSheets((prevProjects) =>
@@ -54,11 +71,11 @@ export const useTimeSheetTable = (initialPage = 1, limit = 20) => {
 
   useEffect(() => {
     fetchTimeSheet();
-  }, [fetchTimeSheet]);
+  }, [pagination.page, searchTerm]);
 
   const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   }, []);
 
   return {
@@ -68,10 +85,10 @@ export const useTimeSheetTable = (initialPage = 1, limit = 20) => {
     isLoading,
     updateTimeSheetStatus,
     error,
-    totalCount,
-    currentPage,
-    totalPages,
-    setCurrentPage,
+    totalCount: pagination.total,
+    currentPage: pagination.page,
+    totalPages: pagination.total_pages,
+    onPageChange: (page: number) => setPagination((prev) => ({ ...prev, page })),
     refetch: fetchTimeSheet,
   };
 };

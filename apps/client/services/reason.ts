@@ -1,29 +1,19 @@
 import { GetAllReasonsParams } from "@/types/reason";
+import { buildSearchParams } from "@/utils/common/url";
 import JsonHttp from "@workspace/ui/lib/JsonHttp";
 
 class ReasonService {
   async getAllReasons(params: GetAllReasonsParams = {}) {
     const { page = 1, limit = 10, search, status, startDate, endDate } = params;
 
-    const queryParams = new URLSearchParams();
-    queryParams.append("page", page.toString());
-    queryParams.append("limit", limit.toString());
-
-    if (search && search.trim()) {
-      queryParams.append("search", search.trim());
-    }
-
-    if (status) {
-      queryParams.append("status", status);
-    }
-
-    if (startDate) {
-      queryParams.append("startDate", startDate);
-    }
-
-    if (endDate) {
-      queryParams.append("endDate", endDate);
-    }
+    const queryParams = buildSearchParams({
+      page,
+      limit,
+      search: search?.trim(),
+      status,
+      startDate,
+      endDate,
+    });
 
     return await JsonHttp.get(`/reason?${queryParams.toString()}`);
   }

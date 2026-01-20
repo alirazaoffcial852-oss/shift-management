@@ -99,25 +99,79 @@ class ShiftService {
     endDate: string,
     company_id: number,
     role_id: number[] = [],
-    has_locomotive: boolean = true
+    has_locomotive: boolean = true,
+    filterParams?: any
   ) {
+    console.log("getWeeklyShifts called with:", {
+      startDate,
+      endDate,
+      company_id,
+      role_id,
+      has_locomotive,
+      filterParams,
+    });
+
     const params = new URLSearchParams();
 
     if (startDate) params.append("from", startDate);
     if (endDate) params.append("to", endDate);
     if (company_id) params.append("company_id", company_id.toString());
 
-    // Format role_id as an array string: role_id=[1,2]
     if (role_id.length > 0) {
-      params.append("role_id", JSON.stringify(role_id));
-    } else {
-      params.append("role_id", JSON.stringify([]));
+      role_id.forEach((id) => {
+        params.append("role_id", id.toString());
+      });
     }
 
     if (has_locomotive)
       params.append("has_locomotive", has_locomotive.toString());
 
-    return await http.get(`/shifts/get-weekly-shifts?${params.toString()}`);
+    if (filterParams) {
+      if (filterParams.status && filterParams.status.length > 0) {
+        filterParams.status.forEach((status: string) => {
+          params.append("status", status);
+        });
+      }
+      if (filterParams.employee_id && filterParams.employee_id.length > 0) {
+        filterParams.employee_id.forEach((id: string) => {
+          params.append("employee_id", id);
+        });
+      }
+      if (filterParams.project_id && filterParams.project_id.length > 0) {
+        filterParams.project_id.forEach((id: string) => {
+          params.append("project_id", id);
+        });
+      }
+      if (filterParams.product_id && filterParams.product_id.length > 0) {
+        filterParams.product_id.forEach((id: string) => {
+          params.append("product_id", id);
+        });
+      }
+      if (filterParams.bv_project_id && filterParams.bv_project_id.length > 0) {
+        filterParams.bv_project_id.forEach((id: string) => {
+          params.append("bv_project_id", id);
+        });
+      }
+      if (filterParams.customer_id && filterParams.customer_id.length > 0) {
+        filterParams.customer_id.forEach((id: string) => {
+          params.append("customer_id", id);
+        });
+      }
+      if (filterParams.personnel_id && filterParams.personnel_id.length > 0) {
+        filterParams.personnel_id.forEach((id: string) => {
+          params.append("personnel_id", id);
+        });
+      }
+      if (filterParams.location) {
+        params.append("location", filterParams.location);
+      }
+    }
+
+    const url = `/shifts/get-weekly-shifts?${params.toString()}`;
+    console.log("Making API call to:", url);
+    console.log("Full URL params:", params.toString());
+
+    return await http.get(url);
   }
 
   async assignLocomotiveToShift(formData: FormData) {

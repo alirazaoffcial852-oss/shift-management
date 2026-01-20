@@ -54,14 +54,31 @@ class WagonListService {
     return await JsonHttp.patch(`/wagon-list/${wagonListId}`, formData);
   }
 
-  async getAllWagonLists(params?: {
-    page?: number;
-    search?: string;
-    timeFilter?: string;
-    startDate?: string;
-    endDate?: string;
-  }) {
-    return await JsonHttp.get(`/wagon-list`, { params });
+  async getAllWagonLists(
+    page: number = 1,
+    limit: number = 10,
+    search: string = "",
+    filters?: {
+      timeFilter?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ) {
+    const params = new URLSearchParams();
+    params.set("page", page.toString());
+    params.set("limit", limit.toString());
+
+    if (search) {
+      params.set("search", search);
+    }
+
+    if (filters) {
+      if (filters.timeFilter) params.set("timeFilter", filters.timeFilter);
+      if (filters.startDate) params.set("startDate", filters.startDate);
+      if (filters.endDate) params.set("endDate", filters.endDate);
+    }
+
+    return await JsonHttp.get(`/wagon-list?${params.toString()}`);
   }
 }
 

@@ -9,6 +9,7 @@ export interface WagonHistoryItem {
   usn_shift_id: number;
   wagon_id: number;
   current_location_id?: number;
+  arrival_location_id?: number;
   status: string;
   date: string;
   created_at: string;
@@ -23,6 +24,10 @@ export interface WagonHistoryItem {
     wagon_number: number;
   };
   current_location?: {
+    id: number;
+    name: string;
+  };
+  arrival_location?: {
     id: number;
     name: string;
   };

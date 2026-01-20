@@ -27,14 +27,18 @@ interface TableViewProps {
   wagons: WagonData[];
   filters: WagonFilters;
   onFilterChange: (field: keyof WagonFilters, value: string) => void;
+  locations?: any[]; 
 }
 
 const TableView: React.FC<TableViewProps> = ({
   wagons,
   filters,
   onFilterChange,
+  locations: locationsProp,
 }) => {
-  const { locations, loading: loadingLocations } = useLocationsList();
+  const locationsHook = useLocationsList();
+  const locations = locationsProp || locationsHook.locations;
+  const loadingLocations = locationsProp ? false : locationsHook.loading;
 
   const getStatusColor = (status: string) => {
     switch (status) {

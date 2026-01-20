@@ -1,3 +1,4 @@
+import { buildQueryString } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 import { TrackCostResponse } from "@/types/trackCost";
 
@@ -8,17 +9,14 @@ class TrackCostService {
     search?: string;
     status?: string;
   }): Promise<TrackCostResponse> {
-    const searchParams = new URLSearchParams();
+    const queryString = buildQueryString({
+      page: params?.page,
+      limit: params?.limit,
+      search: params?.search,
+      status: params?.status,
+    });
 
-    if (params?.page) searchParams.append("page", params.page.toString());
-    if (params?.limit) searchParams.append("limit", params.limit.toString());
-    if (params?.search) searchParams.append("search", params.search);
-    if (params?.status) searchParams.append("status", params.status);
-
-    const queryString = searchParams.toString();
-    const url = `shifts/toll-cost-shifts${queryString ? `?${queryString}` : ""}`;
-
-    return await http.get(url);
+    return await http.get(`shifts/toll-cost-shifts${queryString}`);
   }
 
   async getTrackCostById(trackCostId: string) {

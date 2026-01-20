@@ -65,20 +65,25 @@ export const SMSDatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
     const calendarRef = React.useRef<HTMLDivElement>(null);
     const datepickerWrapperRef = React.useRef<HTMLDivElement>(null);
 
+    const formatDateForInput = (date: Date): string => {
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      const separator = displayFormat.includes(".") ? "." : "/";
+      return `${day}${separator}${month}${separator}${year}`;
+    };
+
     React.useEffect(() => {
       if (value?.startDate) {
         setDateValue(value);
         const date = new Date(value.startDate);
         if (!isNaN(date.getTime())) {
-          const day = String(date.getDate()).padStart(2, "0");
-          const month = String(date.getMonth() + 1).padStart(2, "0");
-          const year = date.getFullYear();
-          setInputValue(`${day}/${month}/${year}`);
+          setInputValue(formatDateForInput(date));
         }
       } else {
         setInputValue("");
       }
-    }, [value]);
+    }, [value, displayFormat]);
 
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -174,10 +179,7 @@ export const SMSDatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
         onChange(newValue);
 
         const date = new Date(newValue.startDate);
-        const day = String(date.getDate()).padStart(2, "0");
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const year = date.getFullYear();
-        setInputValue(`${day}/${month}/${year}`);
+        setInputValue(formatDateForInput(date));
         setShowCalendar(false);
       } else {
         const emptyValue: DatePickerValue = {

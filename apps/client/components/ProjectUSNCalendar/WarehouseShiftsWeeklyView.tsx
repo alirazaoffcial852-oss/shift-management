@@ -27,8 +27,8 @@ export default function WarehouseShiftsWeeklyView() {
     draggedShift,
     handlePreviousWeek,
     handleNextWeek,
-    handleMonthYearSelect,
-  } = useProjectUSNCalendar("weekly");
+    handleWeekDateChange,
+  } = useProjectUSNCalendar("weekly", "warehouse");
 
   const { locomotives } = useLocomotiveTable();
   const { existingRoles } = useRoleManager({
@@ -39,8 +39,8 @@ export default function WarehouseShiftsWeeklyView() {
   });
 
   const handleWeekChange = (date: Date) => {
-    if (handleMonthYearSelect) {
-      handleMonthYearSelect(date.getFullYear(), date.getMonth());
+    if (handleWeekDateChange) {
+      handleWeekDateChange(date);
     }
   };
 

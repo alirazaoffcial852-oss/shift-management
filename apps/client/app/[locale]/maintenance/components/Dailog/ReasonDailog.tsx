@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog";
 import ReasonForm from "@/components/Forms/ReasonForm";
-import { DialogProps } from "@/types/reason";
+import { DialogProps } from "@/types/shared/global";
 
 const ReasonDialog: React.FC<DialogProps> = ({
   isOpen,
@@ -41,14 +41,14 @@ const ReasonDialog: React.FC<DialogProps> = ({
               useComponentAs="ADD"
               onClose={onClose}
               isDialog={true}
-              refetch={refetch}
+              refetch={refetch ?? (() => {})}
             />
           ) : (
             <ReasonForm
               useComponentAs="EDIT"
               onClose={onClose}
               id={Number(id)}
-              refetch={refetch}
+              refetch={refetch ?? (() => {})}
               isDialog={true}
             />
           )}

@@ -1,3 +1,4 @@
+import { Pagination, PaginatedResponse } from "./pagination";
 import { STATUS } from "./shared/global";
 
 export interface SupplierPlantRow {
@@ -52,15 +53,7 @@ export interface ProjectUsnProductResponse {
   message: string;
 }
 
-export interface ProjectUsnProductListData {
-  data: ProjectUsnProduct[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    total_pages: number;
-  };
-}
+export interface ProjectUsnProductListData extends PaginatedResponse<ProjectUsnProduct> {}
 
 export interface ProjectUsnProductListResponse {
   data: ProjectUsnProductListData;

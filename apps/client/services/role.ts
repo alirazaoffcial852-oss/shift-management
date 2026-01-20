@@ -1,3 +1,4 @@
+import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 
 class RoleService {
@@ -9,17 +10,14 @@ class RoleService {
     act_as?: string,
     searchTerm?: string
   ) {
-    const searchParams = new URLSearchParams();
-    searchParams.append("page", page.toString());
-    searchParams.append("limit", limit.toString());
-    searchParams.append("clientId", client_id.toString());
-    searchParams.append("company_id", company_id.toString());
-    if (act_as) {
-      searchParams.append("act_as", act_as);
-    }
-    if (searchTerm) {
-      searchParams.append("search", searchTerm);
-    }
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      clientId: client_id,
+      company_id,
+      act_as,
+      search: searchTerm,
+    });
 
     return await http.get(`/clients/roles?${searchParams.toString()}`);
   }

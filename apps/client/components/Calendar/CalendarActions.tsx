@@ -192,7 +192,7 @@ const CalendarActions = ({
             }}
           />
         )}{" "}
-        {!isEmployee && pathType === "monthly" && (
+        {!isEmployee && (
           <SMSButton
             onClick={toggleFilters}
             startIcon={<Filter className="h-4 w-4" />}

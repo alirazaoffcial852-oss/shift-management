@@ -28,6 +28,7 @@ const Viewstaff = () => {
     tabValue,
     setTabValue,
     updateStaffStatus,
+    isLoading,
   } = useStaffTable();
 
   const columns = getColumns();
@@ -91,7 +92,10 @@ const Viewstaff = () => {
           onTimeFilterChange={handleTimeFilterChange}
           onDateRangeChange={handleDateRangeChange}
           onSearchChange={handleSearch}
+          search
+          pagination
           actionsHeader={tStaff("actions")}
+          isLoading={isLoading}
         />
       </div>
     </>

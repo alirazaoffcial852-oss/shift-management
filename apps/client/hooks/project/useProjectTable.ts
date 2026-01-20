@@ -6,10 +6,11 @@ import { Project } from "@/types/project";
 import { STATUS } from "@/types/shared/global";
 
 export const useProjectTable = (initialPage = 1, limit = 20) => {
+  const { company } = useCompany();
   const [tabValue, setTabValue] = useState<STATUS>("ACTIVE");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: initialPage,
     limit: limit,
@@ -18,10 +19,8 @@ export const useProjectTable = (initialPage = 1, limit = 20) => {
   });
   const [error, setError] = useState<string | null>(null);
 
-  const { company } = useCompany();
-
   const fetchProjects = useCallback(
-    async (page = 1, searchTerm = "") => {
+    async (page = 1, searchTermParam = "") => {
       setIsLoading(true);
       setError(null);
       try {
@@ -29,22 +28,19 @@ export const useProjectTable = (initialPage = 1, limit = 20) => {
           return;
         }
 
-        const response = await ProjectService.getAllProjects(page, pagination.limit, company.id as number, tabValue, searchTerm);
+        const response = await ProjectService.getAllProjects(page, pagination.limit, company.id as number, tabValue, searchTermParam);
 
         const newProjects = response.data?.data || [];
 
-        if (page === 1) {
-          setProjects(newProjects);
-        } else {
-          setProjects((prev) => [...prev, ...newProjects]);
-        }
+        // Always replace projects for standard pagination
+        setProjects(newProjects);
 
         if (response.data.pagination) {
           setPagination({
             page: response.data.pagination.page,
             limit: response.data.pagination.limit,
             total: response.data.pagination.total,
-            total_pages: response.data.pagination.total_pages,
+            total_pages: response.data.pagination.totalPages,
           });
         }
 
@@ -62,23 +58,24 @@ export const useProjectTable = (initialPage = 1, limit = 20) => {
   );
 
   useEffect(() => {
-    fetchProjects(1, "");
-  }, [fetchProjects]);
+    fetchProjects(pagination.page, searchTerm);
+  }, [pagination.page, searchTerm, fetchProjects]);
 
   const handleLoadMoreProjects = useCallback(() => {
     if (pagination.page < pagination.total_pages) {
-      fetchProjects(pagination.page + 1, searchTerm);
+      setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
     }
-  }, [pagination, searchTerm, fetchProjects]);
+  }, [pagination.page, pagination.total_pages]);
 
-  const handleSearchProjects = useCallback(
-    (searchTerm: string) => {
-      setSearchTerm(searchTerm);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-      fetchProjects(1, searchTerm);
-    },
-    [fetchProjects]
-  );
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handleTabChange = useCallback((val: STATUS) => {
+    setTabValue(val);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
 
   const updateProjectStatus = useCallback((projectId: number) => {
     setProjects((prevProjects) => prevProjects.filter((project) => project.id !== projectId));
@@ -94,19 +91,11 @@ export const useProjectTable = (initialPage = 1, limit = 20) => {
     ...project,
   }));
 
-  const handleSearch = useCallback(
-    (searchTerm: string) => {
-      setSearchTerm(searchTerm);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-      fetchProjects(1, searchTerm);
-    },
-    [fetchProjects]
-  );
-
   return {
     tabValue,
-    setTabValue,
-    handleSearchProjects,
+    setTabValue: handleTabChange,
+    handleSearchProjects: handleSearch,
+    handleSearch,
     setProjects,
     projects: formattedProjects,
     rawProjects: projects,
@@ -116,10 +105,9 @@ export const useProjectTable = (initialPage = 1, limit = 20) => {
     pagination,
     handleLoadMoreProjects,
     removeProject,
-    refetch: () => fetchProjects(1, ""),
-    setCurrentPage: (page: number) => setPagination((prev) => ({ ...prev, page })),
+    refetch: () => fetchProjects(pagination.page, searchTerm),
     currentPage: pagination.page,
     totalPages: pagination.total_pages,
-    handleSearch,
+    setCurrentPage: (page: number) => setPagination((prev) => ({ ...prev, page })),
   };
 };

@@ -1,4 +1,3 @@
-import { locomotive } from "@/types/locomotive";
 import { SMSButton } from "@workspace/ui/components/custom/SMSButton";
 import { SMSInput } from "@workspace/ui/components/custom/SMSInput";
 import {
@@ -10,8 +9,9 @@ import LocomotiveService from "@/services/locomotive";
 import { useState } from "react";
 import { Company } from "@/types/configuration";
 import { useTranslations } from "next-intl";
+import { Locomotive, LocomotiveBasic } from "@/types/locomotive";
 interface AddSubcategoryDialogProps {
-  onAddSubcategory: (subcategory: locomotive) => void;
+  onAddSubcategory: (subcategory: Locomotive) => void;
   company: Company;
   open: boolean;
   onClose: () => void;
@@ -22,7 +22,7 @@ export const AddSubcategoryDialog = ({
   open,
   onClose,
 }: AddSubcategoryDialogProps) => {
-  const [newSubcategory, setNewSubcategory] = useState<locomotive>({
+  const [newSubcategory, setNewSubcategory] = useState<LocomotiveBasic>({
     name: "",
   });
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   getActions,
   ProductActionCallbacks,
@@ -7,7 +7,7 @@ import {
 } from "./table-essentails";
 import { SMSButton } from "@workspace/ui/components/custom/SMSButton";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { SMSTable } from "@workspace/ui/components/custom/SMSTable";
 import { PRODUCT_OPTIONS } from "@/constants/tabsOption.constant";
@@ -19,6 +19,7 @@ import { usePermission } from "@/hooks/usePermission";
 
 const ViewProduct = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     products,
     currentPage,
@@ -33,9 +34,30 @@ const ViewProduct = () => {
     isLoading,
   } = useProductTable();
 
-  // Custom state for product tabs
+  const initializeTabValue = (): PRODUCT_TAB_STATUS => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "archived") {
+      return "ARCHIVED";
+    }
+    if (tabParam === "active") {
+      return "ACTIVE";
+    }
+    return "ACTIVE";
+  };
+
   const [productTabValue, setProductTabValue] =
-    useState<PRODUCT_TAB_STATUS>("ACTIVE");
+    useState<PRODUCT_TAB_STATUS>(initializeTabValue());
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "archived") {
+      setProductTabValue("ARCHIVED");
+      setTabValue("ARCHIVED");
+    } else if (tabParam === "active") {
+      setProductTabValue("ACTIVE");
+      setTabValue("ACTIVE");
+    }
+  }, [searchParams, setTabValue]);
 
   const handleDuplicate = async (product: Product) => {
     await duplicateProduct(product);
@@ -67,6 +89,10 @@ const ViewProduct = () => {
     setProductTabValue(value);
     if (value === "ACTIVE" || value === "ARCHIVED") {
       setTabValue(value);
+      // Update URL to reflect the current tab
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", value.toLowerCase());
+      router.push(`/products?${params.toString()}`, { scroll: false });
     }
   };
 

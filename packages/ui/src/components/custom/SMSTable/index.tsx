@@ -20,6 +20,7 @@ import NoDataFound from "../NoDataFound/index";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { SearchFilters } from "../TableFilters";
 import { useTranslations } from "next-intl";
+import { SMSTableSkeleton } from "./Skeleton";
 
 const getNestedValue = (obj: any, path: string) => {
   return path.split(".").reduce((acc, part) => acc && acc[part], obj);
@@ -130,6 +131,18 @@ export function SMSTable({
 
     return getNestedValue(row, column.accessor);
   };
+
+  if (isLoading) {
+    return (
+      <SMSTableSkeleton
+        columns={columns.length}
+        rows={10}
+        showSearch={search}
+        showActions={!!actions}
+        className={className}
+      />
+    );
+  }
 
   return (
     <>
@@ -259,3 +272,5 @@ export function SMSTable({
     </>
   );
 }
+
+export { SMSTableSkeleton } from "./Skeleton";

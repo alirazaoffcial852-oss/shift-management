@@ -1,3 +1,4 @@
+import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 
 class LocomotiveService {
@@ -9,8 +10,22 @@ class LocomotiveService {
     return await http.post("/locomotives/routes", data);
   }
 
-  async getAllLocomotives(page: number, limit: number, companyId: number, status: string = "ACTIVE") {
-    return await http.get(`/locomotives?page=${page}&limit=${limit}&company_id=${companyId}&status=${status}`);
+  async getAllLocomotives(
+    page: number,
+    limit: number,
+    companyId: number,
+    status: string = "ACTIVE",
+    search?: string
+  ) {
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      company_id: companyId,
+      status,
+      search,
+    });
+
+    return await http.get(`/locomotives?${searchParams.toString()}`);
   }
 
   async addLocomotive(data: FormData) {
@@ -34,6 +49,10 @@ class LocomotiveService {
 
   async getLocomotiveById(id: number) {
     return await http.get(`/locomotives/${id}`);
+  }
+
+  async deleteLocomotive(id: number) {
+    return await http.del(`/locomotives/${id}`);
   }
 }
 

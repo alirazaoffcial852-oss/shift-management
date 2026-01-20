@@ -1,6 +1,6 @@
 "use client";
 
-import { TableActionsProps } from "@/types/reason";
+import { TableActionsProps } from "@/types/shared/global";
 import { ActionButton } from "@workspace/ui/components/custom/ActionButton";
 import { Edit, Trash2, Plus, CheckCircle2, EyeIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -8,6 +8,20 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 interface ExtendedTableActionsProps extends TableActionsProps {
+  handleOpenAddDialog?: ({
+    type,
+    id,
+  }: {
+    type: "add" | "edit";
+    id?: string;
+  }) => void;
+  handleOpenViewDetailsDialog?: ({
+    type,
+    id,
+  }: {
+    type: "add" | "edit";
+    id?: string;
+  }) => void;
   handleOpenCompleteDialog?: ({
     type,
     id,
@@ -164,7 +178,7 @@ const TableActions: React.FC<ExtendedTableActionsProps> = ({
     <>
       <div className="flex flex-col w-full">
         <button
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left rounded-md transition-colors"
+          className="flex items-center gap-2 px-3 py-2 text-sm text-green-600 hover:bg-green-50 w-full text-left rounded-md transition-colors"
           onClick={() => handleOpenAddDialog?.({ type: "edit", id: row?.id })}
         >
           <Edit className="w-4 h-4" />

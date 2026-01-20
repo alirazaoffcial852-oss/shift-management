@@ -1,3 +1,4 @@
+import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 
 class costCenterService {
@@ -7,13 +8,12 @@ class costCenterService {
     company_id: number,
     searchTerm?: string
   ) {
-    const searchParams = new URLSearchParams();
-    searchParams.append("page", page.toString());
-    searchParams.append("limit", limit.toString());
-    searchParams.append("company_id", company_id.toString());
-    if (searchTerm) {
-      searchParams.append("search", searchTerm);
-    }
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      company_id,
+      search: searchTerm,
+    });
 
     return await http.get(`/cost-centers?${searchParams.toString()}`);
   }

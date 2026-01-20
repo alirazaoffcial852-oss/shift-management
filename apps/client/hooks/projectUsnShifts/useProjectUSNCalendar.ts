@@ -50,20 +50,35 @@ export const useProjectUSNCalendar = (
   const fetchShifts = useCallback(async () => {
     setIsLoading(true);
     try {
-      const monthStart = startOfMonth(currentDate);
-      const from = format(monthStart, "yyyy-MM-dd");
-      const toDate = new Date(
-        monthStart.getFullYear(),
-        monthStart.getMonth() + 1,
-        0
-      );
-      const to = format(toDate, "yyyy-MM-dd");
+      let from: string;
+      let to: string;
+
+      let limit: number | undefined;
+      
+      if (view === "weekly") {
+        const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+        from = format(weekStart, "yyyy-MM-dd");
+        to = format(weekEnd, "yyyy-MM-dd");
+        limit = 100;
+      } else {
+        const monthStart = startOfMonth(currentDate);
+        from = format(monthStart, "yyyy-MM-dd");
+        const toDate = new Date(
+          monthStart.getFullYear(),
+          monthStart.getMonth() + 1,
+          0
+        );
+        to = format(toDate, "yyyy-MM-dd");
+        limit = 100;
+      }
 
       const response =
         await ProjectUSNShiftsService.getAllProjectUSNShiftsByDate(
           from,
           to,
-          company?.id
+          company?.id,
+          limit
         );
       if (response?.data && Array.isArray(response.data)) {
         const filteredShifts = response.data.filter((shift: any) => {
@@ -122,7 +137,7 @@ export const useProjectUSNCalendar = (
     } finally {
       setIsLoading(false);
     }
-  }, [company?.id, currentDate, shiftType]);
+  }, [company?.id, currentDate, shiftType, view]);
 
   const updateUrlWithDate = useCallback(
     (date: Date) => {
@@ -185,6 +200,14 @@ export const useProjectUSNCalendar = (
       const newDate = new Date(year, month, 1);
       setCurrentDate(newDate);
       updateUrlWithDate(newDate);
+    },
+    [updateUrlWithDate]
+  );
+
+  const handleWeekDateChange = useCallback(
+    (date: Date) => {
+      setCurrentDate(date);
+      updateUrlWithDate(date);
     },
     [updateUrlWithDate]
   );
@@ -639,7 +662,6 @@ export const useProjectUSNCalendar = (
           prev.filter((shift) => shift.id !== shiftId)
         );
         toast.success("Warehouse shift deleted successfully");
-        // Ensure UI reflects server state immediately
         await fetchShifts();
       } catch (error) {
         console.error("Error deleting shift:", error);
@@ -741,7 +763,6 @@ export const useProjectUSNCalendar = (
           toast.success(
             response.message || "USN Shifts updated to PLANNED successfully"
           );
-          // Refetch to ensure real-time server state
           await fetchShifts();
           return true;
         }
@@ -798,6 +819,7 @@ export const useProjectUSNCalendar = (
     handlePreviousWeek: view === "weekly" ? handlePreviousWeek : undefined,
     handleNextWeek: view === "weekly" ? handleNextWeek : undefined,
     handleMonthYearSelect,
+    handleWeekDateChange: view === "weekly" ? handleWeekDateChange : undefined,
     handleShiftClick,
     handleShiftSelect,
     clearSelectedShifts,

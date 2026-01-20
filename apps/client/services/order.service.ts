@@ -1,16 +1,15 @@
 import { CreateOrderData } from "@/types/order";
+import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 import JsonHttp from "@workspace/ui/lib/JsonHttp";
 
 class OrderService {
   async getAllOrders(page: number, limit: number, searchTerm?: string) {
-    const searchParams = new URLSearchParams();
-    searchParams.append("page", page.toString());
-    searchParams.append("limit", limit.toString());
-
-    if (searchTerm) {
-      searchParams.append("search", searchTerm);
-    }
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      search: searchTerm,
+    });
 
     return await JsonHttp.get(`/orders?${searchParams.toString()}`);
   }

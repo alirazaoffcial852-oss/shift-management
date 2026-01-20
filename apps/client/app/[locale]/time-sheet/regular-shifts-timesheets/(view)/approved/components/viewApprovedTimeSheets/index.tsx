@@ -6,11 +6,9 @@ import { useTimeSheetTable } from "@/hooks/timeSheet/useTimeSheetTable";
 import { useTranslations } from "next-intl";
 const ViewApprovedTimeSheet = () => {
   const t = useTranslations("timesheet");
-  const { timeSheets, currentPage, totalPages, setCurrentPage, handleSearch } =
+  const { timeSheets, currentPage, totalPages, onPageChange, handleSearch } =
     useTimeSheetTable();
-
-  console.log(timeSheets, "timeSheets");
-
+    
   return (
     <SMSTable
       columns={getColumns(t)}
@@ -18,7 +16,7 @@ const ViewApprovedTimeSheet = () => {
       actions={ACTIONS}
       currentPage={currentPage}
       totalPages={totalPages}
-      onPageChange={setCurrentPage}
+      onPageChange={onPageChange}
       onSearchChange={handleSearch}
     />
   );

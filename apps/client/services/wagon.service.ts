@@ -34,6 +34,9 @@ class WagonService {
       if (filters.status) {
         params.set("status", filters.status);
       }
+      if (filters.date) {
+        params.set("date", filters.date);
+      }
       if (filters.wagon_type) {
         params.set("wagon_type", filters.wagon_type);
       }

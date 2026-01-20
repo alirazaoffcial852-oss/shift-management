@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ActionButton } from "@workspace/ui/components/custom/ActionButton";
 import CustomerService from "@/services/customer";
 import { toast } from "sonner";
-import { STATUS } from "@/types/shared/global";
+import { CustomerActionCallbacks } from "@/types/components/table";
 import { useTranslations } from "next-intl";
 
 export const getColumns = () => {
@@ -19,10 +19,6 @@ export const getColumns = () => {
     { header: tCommon("postal_code"), accessor: "postal_code" },
   ];
 };
-export type customerActionCallbacks = {
-  onDelete: (id: number) => void;
-  onStatusUpdate: (id: number, status: STATUS) => void;
-};
 
 export const getActions = () => {
   const tActions = useTranslations("actions");
@@ -33,17 +29,17 @@ export const getActions = () => {
     {
       label: tActions("edit"),
       element: (item: { id: number; name: string }) => (
-        <Link href={`/customers/${item.id}/edit`} className="w-full block py-2 px-3 hover:bg-gray-100 transition-colors">
+        <Link href={`/customers/${item.id}/edit`} className="w-full block py-2 px-3 hover:bg-green-50 transition-colors">
           <span className="flex items-center gap-2">
-            <Edit2Icon className="w-4 h-4 text-gray-800" />
-            <span className="text-sm text-gray-800">{tActions("edit")}</span>
+            <Edit2Icon className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-600">{tActions("edit")}</span>
           </span>
         </Link>
       ),
     },
     {
       label: tActions("delete"),
-      element: (item: { id: number; name: string }, { onDelete }: Pick<customerActionCallbacks, "onDelete">) => (
+      element: (item: { id: number; name: string }, { onDelete }: Pick<CustomerActionCallbacks, "onDelete">) => (
         <ActionButton
           item={{ ...item, id: item.id ?? 0 }}
           customConfig={{
@@ -73,7 +69,7 @@ export const getActions = () => {
     },
     {
       label: tActions("archive"),
-      element: (item: { id: number; name: string; status: string }, { onStatusUpdate }: Pick<customerActionCallbacks, "onStatusUpdate">) => (
+      element: (item: { id: number; name: string; status: string }, { onStatusUpdate }: Pick<CustomerActionCallbacks, "onStatusUpdate">) => (
         <ActionButton
           item={{ ...item, id: item.id ?? 0, name: item.name }}
           customConfig={{
@@ -82,9 +78,9 @@ export const getActions = () => {
             description: `${tMessages("archiveConfirm")} ${tLabel("customer")}  ${tMessages("commonMessage")} <b>${item.name}</b>?`,
             confirmText: tActions("archive"),
             buttonText: tActions("archive"),
-            variant: "destructive",
+            variant: "default",
             icon: Archive,
-            style: "hover:bg-red-50 text-blue-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             archivedProduct: async (id: number) => {
@@ -105,7 +101,7 @@ export const getActions = () => {
     },
     {
       label: tActions("activate"),
-      element: (item: { id: number; name: string; status: string }, { onStatusUpdate }: Pick<customerActionCallbacks, "onStatusUpdate">) => (
+      element: (item: { id: number; name: string; status: string }, { onStatusUpdate }: Pick<CustomerActionCallbacks, "onStatusUpdate">) => (
         <ActionButton
           item={{ ...item, id: item.id ?? 0, name: item.name }}
           customConfig={{
@@ -114,9 +110,9 @@ export const getActions = () => {
             description: `${tMessages("activateConfirm")}  ${tLabel("customer")}  ${tMessages("commonMessage")} <b>${item.name}</b>?`,
             confirmText: tActions("activate"),
             buttonText: tActions("activate"),
-            variant: "destructive",
+            variant: "default",
             icon: Activity,
-            style: "hover:bg-red-50 text-blue-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             activateProduct: async (id: number) => {

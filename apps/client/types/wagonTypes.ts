@@ -1,3 +1,6 @@
+import { Pagination } from "./pagination";
+import { BaseEntityRequired, FormErrors, ApiSuccessResponse } from "./shared/global";
+
 export interface WagonFormData {
   wagon_number: string;
   location_id?: number;
@@ -40,39 +43,28 @@ export interface WagonRents {
   amount: string;
 }
 
-export interface WagonFormErrors {
-  [key: string]: string;
+export interface WagonFormErrors extends FormErrors {}
+
+export interface WagonLocation {
+  id: number;
+  name?: string;
+  location?: string;
+  type?: string;
 }
 
-export interface Wagon extends WagonFormData {
+export interface Wagon extends WagonFormData, BaseEntityRequired {
   status: string;
-  id: number;
-  created_at: string;
-  updated_at: string;
-  location?: {
-    id: number;
-    name?: string;
-    location?: string;
-    type?: string;
-  };
+  location?: WagonLocation;
   wagon_brake_manual_details?: WagonBrakeManualDetails;
   wagon_brake_auto_details?: WagonBrakeAutoDetails;
   wagons_damage_informations?: WagonDamageInformations;
   wagon_rents?: WagonRents;
 }
 
-export interface WagonResponse {
-  data: Wagon;
-  message: string;
-}
+export interface WagonResponse extends ApiSuccessResponse<Wagon> {}
 
 export interface WagonListResponse {
   data: Wagon[];
   message: string;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination?: Pagination;
 }

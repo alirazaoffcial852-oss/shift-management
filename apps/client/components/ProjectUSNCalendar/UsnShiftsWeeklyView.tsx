@@ -27,7 +27,7 @@ export default function UsnShiftsWeeklyView() {
     draggedShift,
     handlePreviousWeek,
     handleNextWeek,
-    handleMonthYearSelect,
+    handleWeekDateChange,
   } = useProjectUSNCalendar("weekly");
 
   const { locomotives } = useLocomotiveTable();
@@ -39,8 +39,8 @@ export default function UsnShiftsWeeklyView() {
   });
 
   const handleWeekChange = (date: Date) => {
-    if (handleMonthYearSelect) {
-      handleMonthYearSelect(date.getFullYear(), date.getMonth());
+    if (handleWeekDateChange) {
+      handleWeekDateChange(date);
     }
   };
 

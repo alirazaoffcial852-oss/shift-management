@@ -1,4 +1,5 @@
-import { FORMMODE } from "./shared/global";
+import { ApiPaginatedResponseWithMeta } from "./pagination";
+import { BaseEntityRequired } from "./shared/global";
 
 export interface Action {
   locomotive_id?: number;
@@ -29,29 +30,22 @@ export interface ActionFormProps {
   type?: "add" | "edit";
 }
 
-export interface Locomotive {
-  id: number;
+export interface LocomotiveDetail extends BaseEntityRequired {
   name: string;
   model_type: string;
   engine: string;
   year: number;
   image: string | null;
   company_id: number;
-  created_at: string;
-  updated_at: string;
   status: string;
 }
 
-export interface Reason {
-  id: number;
+export interface ReasonDetail extends BaseEntityRequired {
   reason: string;
   status: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface LocomotiveActions {
-  id: number;
+export interface LocomotiveActions extends BaseEntityRequired {
   locomotive_id: number;
   status: string;
   action_name: string;
@@ -59,31 +53,13 @@ export interface LocomotiveActions {
   yellow_threshold_days: number;
   red_threshold_days: number;
   current_state: string;
-  created_at: string;
-  updated_at: string;
   reason_id: number;
-  locomotive: Locomotive;
-  reason: Reason;
+  locomotive: LocomotiveDetail;
+  reason: ReasonDetail;
   completions: any[];
 }
 
-export interface Pagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  limit: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-export interface FetchLocomotiveResponse {
-  status: string;
-  message: string;
-  data: {
-    data: LocomotiveActions[];
-    pagination: Pagination;
-  };
-}
+export interface FetchLocomotiveResponse extends ApiPaginatedResponseWithMeta<LocomotiveActions> {}
 
 export interface LocomotiveActionRequest {
   actions: {

@@ -13,9 +13,9 @@ const ViewApprovedTimeSheet = () => {
     timeSheets,
     currentPage,
     totalPages,
-    setCurrentPage,
     handleSearch,
     updateTimeSheetStatus,
+    onPageChange
   } = useTimeSheetTable();
 
   console.log(timeSheets, "timeSheets");
@@ -40,7 +40,7 @@ const ViewApprovedTimeSheet = () => {
         actions={ACTIONS}
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        onPageChange={onPageChange}
         onSearchChange={handleSearch}
         enableSelection={true}
         selectedRows={selectedTimeSheets}

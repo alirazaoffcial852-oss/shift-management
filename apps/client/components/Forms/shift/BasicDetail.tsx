@@ -18,7 +18,7 @@ import { useCostCenterTable } from "@/hooks/costCenter/useCostCenterTable";
 import { useTypeOfOperationTable } from "@/hooks/typeOfOperation/useTypeOfOperationTable";
 import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
 import { useBvProjectForm } from "@/hooks/bvProject/useBvProjectForm";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { AddProjectDialog } from "@/components/Dialog/AddProjectDialog";
 import { useProjectForm } from "@/hooks/project/useProjectForm";
 import { AddCustomerDialog } from "@/components/Dialog/AddCustomerDialog";
@@ -85,10 +85,21 @@ export function BasicDetail({
     page: 1,
     total_pages: 0,
   });
+  const loadMoreTriggeredRef = useRef(false);
+  const lastProjectIdRef = useRef<string | undefined>(shifts.project_id);
+
+  useEffect(() => {
+    if (lastProjectIdRef.current !== shifts.project_id) {
+      lastProjectIdRef.current = shifts.project_id;
+      setBvProjectsPagination({ page: 1, total_pages: 0 });
+      loadMoreTriggeredRef.current = false;
+    }
+  }, [shifts.project_id]);
 
   const handleSearchBvProjects = useCallback(
     (searchTerm: string) => {
       setBvProjectsPagination((prev) => ({ ...prev, page: 1 }));
+      loadMoreTriggeredRef.current = false;
       fetchBvProjectsWithSearch(
         1,
         searchTerm,
@@ -99,20 +110,35 @@ export function BasicDetail({
   );
 
   const handleLoadMoreBvProjects = useCallback(() => {
-    if (bvProjectsPagination.page < bvProjectTotalPages) {
+    if (loadMoreTriggeredRef.current || isLoadingBvProjects) {
+      return;
+    }
+
+    if (
+      bvProjectsPagination.page === 1 &&
+      bvProjectsPagination.page < bvProjectTotalPages &&
+      bvProjects.length > 0
+    ) {
+      loadMoreTriggeredRef.current = true;
       const nextPage = bvProjectsPagination.page + 1;
       setBvProjectsPagination((prev) => ({ ...prev, page: nextPage }));
       fetchBvProjectsWithSearch(
         nextPage,
         "",
         shifts.project_id ? parseInt(shifts.project_id) : undefined
-      );
+      ).finally(() => {
+        setTimeout(() => {
+          loadMoreTriggeredRef.current = false;
+        }, 1000);
+      });
     }
   }, [
     bvProjectsPagination.page,
     bvProjectTotalPages,
     fetchBvProjectsWithSearch,
     shifts.project_id,
+    isLoadingBvProjects,
+    bvProjects.length,
   ]);
 
   const {
@@ -147,12 +173,13 @@ export function BasicDetail({
 
     if (field === "project_id") {
       newShifts.bv_project_id = "";
+      setBvProjectsPagination({ page: 1, total_pages: 0 });
+      loadMoreTriggeredRef.current = false;
 
       if (company?.id !== undefined) {
-        refetch(
+        fetchBvProjectsWithSearch(
           1,
-          company.id,
-          "ACTIVE",
+          "",
           typeof value === "string" ? parseInt(value) : undefined
         );
       }
@@ -267,7 +294,10 @@ export function BasicDetail({
             }}
             // required
             // error={errors.bv_project_id}
-            hasMore={bvProjectsPagination.page < bvProjectTotalPages}
+            hasMore={
+              bvProjectsPagination.page < bvProjectTotalPages &&
+              bvProjects.length > 0
+            }
             loadingMore={isLoadingBvProjects}
             onLoadMore={handleLoadMoreBvProjects}
             onSearch={handleSearchBvProjects}
@@ -461,10 +491,9 @@ export function BasicDetail({
         onClose={() => {
           setBvProjectsPagination((prev) => ({ ...prev, page: 1 }));
           if (company?.id !== undefined) {
-            refetch(
+            fetchBvProjectsWithSearch(
               1,
-              company.id,
-              "ACTIVE",
+              "",
               shifts.project_id ? parseInt(shifts.project_id) : undefined
             );
           }

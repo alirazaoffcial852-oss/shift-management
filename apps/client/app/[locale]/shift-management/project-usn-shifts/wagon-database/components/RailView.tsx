@@ -32,14 +32,18 @@ interface RailViewProps {
   wagons: WagonData[];
   filters: WagonFilters;
   onFilterChange: (field: keyof WagonFilters, value: string) => void;
+  locations?: any[];
 }
 
 const RailView: React.FC<RailViewProps> = ({
   wagons,
   filters,
   onFilterChange,
+  locations: locationsProp,
 }) => {
-  const { locations, loading: loadingLocations } = useLocationsList();
+  const locationsHook = useLocationsList();
+  const locations = locationsProp || locationsHook.locations;
+  const loadingLocations = locationsProp ? false : locationsHook.loading;
 
   const wagonsByRail = useMemo(() => {
     const grouped: Record<string, WagonData[]> = {};

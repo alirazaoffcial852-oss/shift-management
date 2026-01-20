@@ -25,7 +25,7 @@ const LocationsList = () => {
     pagination,
     handleSearch,
     handleFilter,
-    handlePageChange,
+    onPageChange: handlePageChange,
     handleDelete,
     filterType,
   } = useLocationsList();
@@ -77,7 +77,7 @@ const LocationsList = () => {
         columns={columns}
         data={locations}
         actions={actions}
-        currentPage={pagination.current_page}
+        currentPage={pagination.page}
         totalPages={pagination.total_pages}
         onPageChange={handlePageChange}
         isLoading={loading}
@@ -92,6 +92,7 @@ const LocationsList = () => {
         filterPlaceholder={tLocations("selectType")}
         selectedFilterValue={filterType}
         actionsHeader={tLocations("actions")}
+        pagination={true}
       />
     </div>
   );

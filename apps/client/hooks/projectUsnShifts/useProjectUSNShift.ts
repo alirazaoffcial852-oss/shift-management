@@ -116,7 +116,7 @@ export const useProjectUSNShift = (
     hasNote: false,
     note: "",
   });
-  const [warehouseLocations, setWarehouseLocations] = useState<Location[]>([]);
+
   const [existingDocuments, setExistingDocuments] = useState<
     Array<{ id: number; document: string }>
   >([]);
@@ -149,7 +149,7 @@ export const useProjectUSNShift = (
     loadedLocation: "",
     rail: "",
     nextStatus: "",
-    date: "2025-09-06",
+    date: "",
   });
 
   const handleInputChange = useCallback(
@@ -314,6 +314,15 @@ export const useProjectUSNShift = (
     },
     []
   );
+
+  useEffect(() => {
+    if(formData.startDate) {
+      setWagonFilters((prev) => ({
+        ...prev,
+        date: formData.startDate,
+      }));
+    }
+  }, [formData.startDate])
 
   const removeRoutePlanningRow = useCallback((rowId: string) => {
     setFormData((prev) => ({
@@ -495,6 +504,18 @@ export const useProjectUSNShift = (
     []
   );
 
+  const resetWagonFilters = useCallback(() => {
+    setWagonFilters({
+      location: "",
+      status: "",
+      wagonType: "",
+      loadedLocation: "",
+      rail: "",
+      nextStatus: "",
+      date: "",
+    });
+  }, []);
+
   const fetchWagons = useCallback(
     async (searchTerm?: string) => {
       setLoading((prev) => ({ ...prev, wagons: true }));
@@ -525,7 +546,7 @@ export const useProjectUSNShift = (
             apiFilters.location = wagonFilters.location;
           }
         }
-        if (wagonFilters.date && wagonFilters.date.trim() !== "") {
+        if (wagonFilters?.date && wagonFilters?.date.trim() !== "") {
           apiFilters.date = wagonFilters.date;
         }
         if (
@@ -545,21 +566,47 @@ export const useProjectUSNShift = (
           apiFilters
         );
         const wagonOptions: WagonOption[] = response.data.data.map(
-          (wagon: any) => ({
-            value: wagon.id.toString(),
-            label: `Wagon ${wagon.wagon_number}`,
-            id: wagon.id,
-            name: `Wagon ${wagon.wagon_number}`,
-            wagonNo: `Wagon ${wagon.wagon_number}`,
-            status: wagon.status || "EMPTY",
-            nextStatus: "No Changes",
-            currentLocation: wagon.location || "Warehouse",
-            loadedEmptyLocation: "",
-            typeOfWagon: wagon.wagon_type || "FAS",
-            maxCapacity: `${wagon.maximun_capacity_of_load_weight} Tons`,
-            rail: wagon.rail || "1",
-            position: wagon.position || "1",
-          })
+          (wagon: any) => {
+            // Get the most recent arrival location from wagon_histories
+            let arrivalLocation: string | undefined;
+            if (wagon.wagon_histories && wagon.wagon_histories.length > 0) {
+              // Find the most recent history entry with arrival_location
+              const historyWithArrival = wagon.wagon_histories
+                .filter((h: any) => h.arrival_location)
+                .sort((a: any, b: any) => 
+                  new Date(b.date).getTime() - new Date(a.date).getTime()
+                )[0];
+              
+              if (historyWithArrival?.arrival_location) {
+                const arrival = historyWithArrival.arrival_location;
+                arrivalLocation = [
+                  arrival.name,
+                  arrival.location,
+                  arrival.type?.replace(/_/g, " ").toLowerCase()
+                ]
+                  .filter(Boolean)
+                  .map((part) => (typeof part === "string" ? part.trim() : part))
+                  .join(" - ");
+              }
+            }
+
+            return {
+              value: wagon.id.toString(),
+              label: `Wagon ${wagon.wagon_number}`,
+              id: wagon.id,
+              name: `Wagon ${wagon.wagon_number}`,
+              wagonNo: `Wagon ${wagon.wagon_number}`,
+              status: wagon.status || "EMPTY",
+              nextStatus: wagon.next_status || "No Changes",
+              currentLocation: wagon.location || "Warehouse",
+              arrivalLocation: arrivalLocation,
+              loadedEmptyLocation: "",
+              typeOfWagon: wagon.wagon_type || "FAS",
+              maxCapacity: `${wagon.maximun_capacity_of_load_weight} Tons`,
+              rail: wagon.rail || "1",
+              position: wagon.position || "1",
+            };
+          }
         );
 
         setWagons(wagonOptions);
@@ -1237,9 +1284,7 @@ export const useProjectUSNShift = (
     [locations]
   );
 
-  useEffect(() => {
-    setWarehouseLocations(filteredWarehouseLocations);
-  }, [filteredWarehouseLocations]);
+
 
   useEffect(() => {
     if (editMode && existingShift && !isInitialized && products.length > 0) {
@@ -1455,6 +1500,7 @@ export const useProjectUSNShift = (
     closeWagonModal,
     handleWagonSelection,
     handleWagonFilterChange,
+    resetWagonFilters,
     fetchWagons,
     handleProductChange,
     handleFileUpload,
@@ -1469,7 +1515,7 @@ export const useProjectUSNShift = (
     getCurrentRowWagons,
     handleProductSearch,
     personalDetailErrors,
-    warehouseLocations,
+    warehouseLocations: filteredWarehouseLocations,
     formatRoutePlanningForSubmit,
   };
 };

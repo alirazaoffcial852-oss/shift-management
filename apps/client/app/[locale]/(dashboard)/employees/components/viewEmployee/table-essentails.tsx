@@ -44,11 +44,11 @@ export const useEmployeeActions = (callbacks: EmployeeActionCallbacks) => {
       element: (employee: Employee) => (
         <Link
           href={`/employees/${employee.id}/edit`}
-          className="w-full block py-2 px-3 hover:bg-gray-100 transition-colors"
+          className="w-full block py-2 px-3 hover:bg-green-50 transition-colors"
         >
           <span className="flex items-center gap-2">
-            <Edit2Icon className="w-4 h-4 text-gray-800" />
-            <span className="text-sm text-gray-800">{tActions("edit")}</span>
+            <Edit2Icon className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-600">{tActions("edit")}</span>
           </span>
         </Link>
       ),
@@ -104,9 +104,9 @@ export const useEmployeeActions = (callbacks: EmployeeActionCallbacks) => {
             description: `${tMessages("archiveConfirm")}  ${tLabel("employee")}  ${tMessages("commonMessage")} <b>${employee.name}</b>? ${tMessages("archiveWarning")}`,
             confirmText: tActions("archive"),
             buttonText: tActions("archive"),
-            variant: "destructive",
+            variant: "default",
             icon: Archive,
-            style: "hover:bg-red-50 text-blue-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             archivedProduct: async (id: number) => {
@@ -140,9 +140,9 @@ export const useEmployeeActions = (callbacks: EmployeeActionCallbacks) => {
             description: `${tMessages("activateConfirm")}  ${tLabel("employee")}  ${tMessages("commonMessage")} <b>${employee.name}</b>? ${tMessages("activateWarning")}`,
             confirmText: tActions("activate"),
             buttonText: tActions("activate"),
-            variant: "destructive",
+            variant: "default",
             icon: Activity,
-            style: "hover:bg-red-50 text-blue-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             activateProduct: async (id: number) => {

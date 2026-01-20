@@ -411,6 +411,14 @@ export default function WegonHistoryPage() {
                                 </span>
                               </span>
 
+                              <span className="text-sm text-gray-600 flex-1">
+                                {t("arrivalLocation")}{" "}
+                                <span className="font-medium">
+                                  {historyItem.arrival_location?.name ||
+                                    t("na")}
+                                </span>
+                              </span>
+
                               <Badge
                                 className={cn(
                                   "px-3 py-1 text-xs font-medium rounded-full",

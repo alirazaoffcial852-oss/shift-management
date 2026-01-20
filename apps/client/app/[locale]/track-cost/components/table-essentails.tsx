@@ -1,10 +1,10 @@
 import { TrackCostShift, TrackCostActionCallbacks } from "@/types/trackCost";
+import { dateRenderer, timeRenderer, getStatusColor } from "@/utils/common/table";
 import { ActionButton } from "@workspace/ui/components/custom/ActionButton";
 import { Plus, Repeat2, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { format } from "date-fns";
 
 export const useTrackCostColumns = () => {
   const t = useTranslations("pages.trackCost");
@@ -13,35 +13,17 @@ export const useTrackCostColumns = () => {
     {
       header: t("date"),
       accessor: "date",
-      render: (value: string) => {
-        try {
-          return value ? format(new Date(value), "dd/MM/yyyy") : "-";
-        } catch {
-          return "-";
-        }
-      },
+      render: dateRenderer,
     },
     {
       header: t("startTime"),
       accessor: "start_time",
-      render: (value: string) => {
-        try {
-          return value ? format(new Date(value), "HH:mm") : "-";
-        } catch {
-          return "-";
-        }
-      },
+      render: timeRenderer,
     },
     {
       header: t("endTime"),
       accessor: "end_time",
-      render: (value: string) => {
-        try {
-          return value ? format(new Date(value), "HH:mm") : "-";
-        } catch {
-          return "-";
-        }
-      },
+      render: timeRenderer,
     },
     { header: t("customer"), accessor: "customer.name" },
     { header: t("product"), accessor: "product.name" },
@@ -56,20 +38,9 @@ export const useTrackCostColumns = () => {
       header: t("shiftStatus"),
       accessor: "status",
       render: (value: string) => {
-        const statusColors = {
-          FIXED: "bg-green-100 text-green-800",
-          PENDING: "bg-yellow-100 text-yellow-800",
-          INVOICED: "bg-blue-100 text-blue-800",
-          APPROVED: "bg-purple-100 text-purple-800",
-          BILLED: "bg-red-100 text-red-800",
-        };
-
         return (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${
-              statusColors[value as keyof typeof statusColors] ||
-              "bg-gray-100 text-gray-800"
-            }`}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(value)}`}
           >
             {value}
           </span>

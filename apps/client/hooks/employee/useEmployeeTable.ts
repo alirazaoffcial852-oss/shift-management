@@ -9,7 +9,7 @@ export const useEmployeeTable = (initialPage = 1, limit = 20) => {
   const [tabValue, setTabValue] = useState<STATUS>("ACTIVE");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [employees, setEmployees] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: initialPage,
     limit: limit,
@@ -19,7 +19,7 @@ export const useEmployeeTable = (initialPage = 1, limit = 20) => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchEmployees = useCallback(
-    async (page = 1, searchTerm = "") => {
+    async (page = 1, searchTermParam = "") => {
       setIsLoading(true);
       setError(null);
       try {
@@ -27,15 +27,18 @@ export const useEmployeeTable = (initialPage = 1, limit = 20) => {
           return;
         }
 
-        const response = await EmployeeService.getAllEmployees(page, pagination.limit, company.id as number, tabValue, searchTerm);
+        const response = await EmployeeService.getAllEmployees(
+          page,
+          pagination.limit,
+          company.id as number,
+          tabValue,
+          searchTermParam
+        );
 
         const newEmployees = response.data?.data || [];
 
-        if (page === 1) {
-          setEmployees(newEmployees);
-        } else {
-          setEmployees((prev) => [...prev, ...newEmployees]);
-        }
+        // Always replace employees for standard pagination
+        setEmployees(newEmployees);
 
         if (response.data.pagination) {
           setPagination({
@@ -59,31 +62,37 @@ export const useEmployeeTable = (initialPage = 1, limit = 20) => {
     [company, pagination.limit, tabValue]
   );
 
+  // Trigger fetch when page or searchTerm changes
   useEffect(() => {
-    fetchEmployees(1, "");
-  }, [fetchEmployees]);
+    fetchEmployees(pagination.page, searchTerm);
+  }, [pagination.page, searchTerm, fetchEmployees]);
 
   const handleLoadMore = useCallback(() => {
     if (pagination.page < pagination.total_pages) {
-      fetchEmployees(pagination.page + 1, searchTerm);
+      setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
     }
-  }, [pagination, searchTerm, fetchEmployees]);
+  }, [pagination.page, pagination.total_pages]);
 
-  const handleSearch = useCallback(
-    (searchTerm: string) => {
-      setSearchTerm(searchTerm);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-      fetchEmployees(1, searchTerm);
-    },
-    [fetchEmployees]
-  );
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handleTabChange = useCallback((val: STATUS) => {
+    setTabValue(val);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
 
   const removeEmployee = useCallback((employeeId: number) => {
-    setEmployees((prevEmployees) => prevEmployees.filter((employee) => employee.id !== employeeId));
+    setEmployees((prevEmployees) =>
+      prevEmployees.filter((employee) => employee.id !== employeeId)
+    );
   }, []);
 
   const updateEmployeeStatus = useCallback((employeeId: number) => {
-    setEmployees((prevEmployees) => prevEmployees.filter((employee) => employee.id !== employeeId));
+    setEmployees((prevEmployees) =>
+      prevEmployees.filter((employee) => employee.id !== employeeId)
+    );
   }, []);
 
   const formattedEmployees = employees.map((employee: any, index: number) => ({
@@ -94,7 +103,7 @@ export const useEmployeeTable = (initialPage = 1, limit = 20) => {
 
   return {
     tabValue,
-    setTabValue,
+    setTabValue: handleTabChange,
     handleSearch,
     setEmployees,
     employees: formattedEmployees,
@@ -105,9 +114,12 @@ export const useEmployeeTable = (initialPage = 1, limit = 20) => {
     pagination,
     handleLoadMore,
     removeEmployee,
-    refetch: () => fetchEmployees(1, ""),
+    refetch: () => fetchEmployees(pagination.page, searchTerm),
     currentPage: pagination.page,
     totalPages: pagination.total_pages,
-    setCurrentPage: (page: number) => setPagination((prev) => ({ ...prev, page })),
+    setCurrentPage: (page: number) =>
+      setPagination((prev) => ({ ...prev, page })),
   };
 };
+
+

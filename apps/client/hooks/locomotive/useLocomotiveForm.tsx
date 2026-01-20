@@ -20,11 +20,9 @@ export const useLocomotiveForm = (id?: number) => {
     {}
   );
 
-  // For file upload
   const [file, setFile] = useState<File>();
   const [dragActive, setDragActive] = useState(false);
 
-  // For existing image from API
   const [imageUrl, setImageUrl] = useState<string>("");
 
   const fetchLocomotiveData = useCallback(async () => {
@@ -42,7 +40,6 @@ export const useLocomotiveForm = (id?: number) => {
 
       setLocomotive(locomotiveData);
 
-      // If the locomotive has an image, set the imageUrl
       if (response.data.image) {
         setImageUrl(response.data.image);
       }
@@ -82,7 +79,6 @@ export const useLocomotiveForm = (id?: number) => {
     validateField(field, value);
   };
 
-  // File upload handlers
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -95,8 +91,8 @@ export const useLocomotiveForm = (id?: number) => {
       newFile.type === "application/pdf"
     ) {
       setFile(newFile);
-      // Clear the existing image URL when a new file is uploaded
       setImageUrl("");
+      clearError("image");
     }
   };
 
@@ -118,10 +114,12 @@ export const useLocomotiveForm = (id?: number) => {
 
   const removeFile = () => {
     setFile(undefined);
+    clearError("image");
   };
 
   const removeExistingImage = () => {
     setImageUrl("");
+    clearError("image");
   };
 
   const validateForm = () => {
@@ -131,6 +129,31 @@ export const useLocomotiveForm = (id?: number) => {
         isValid = false;
       }
     });
+
+    if (!id) {
+      if (!file) {
+        setErrors((prev) => ({
+          ...prev,
+          image: ["Image is required"],
+        }));
+        isValid = false;
+      } else {
+        clearError("image");
+      }
+    } else {
+      if (!imageUrl && !file) {
+        setErrors((prev) => ({
+          ...prev,
+          image: [
+            "Image is required. Please upload a new image or keep the existing one.",
+          ],
+        }));
+        isValid = false;
+      } else {
+        clearError("image");
+      }
+    }
+
     return isValid;
   };
 
@@ -147,12 +170,10 @@ export const useLocomotiveForm = (id?: number) => {
         formData.append("year", locomotive.year.toString());
         formData.append("company_id", company?.id?.toString() || "");
 
-        // If there's a new file, add it to the form data
         if (file) {
           formData.append("image", file);
         }
 
-        // If we're updating and the existing image was removed, indicate this
         if (id && imageUrl === "" && !file) {
           formData.append("remove_image", "true");
         }

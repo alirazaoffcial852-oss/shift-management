@@ -1,10 +1,12 @@
-export interface Topic {
-  id?: number;
+import { ApiPaginatedResponse, PaginationParams } from "./pagination";
+import { BaseEntity, FormProps, DialogProps, ApiSuccessResponse } from "./shared/global";
+
+export type TopicCategory = "CUSTOMER" | "EMPLOYEE" | "COMPANY";
+
+export interface Topic extends BaseEntity {
   topic: string;
-  category?: "CUSTOMER" | "EMPLOYEE" | "COMPANY";
+  category?: TopicCategory;
   status?: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface TopicFormErrors {
@@ -12,56 +14,19 @@ export interface TopicFormErrors {
   category?: string;
 }
 
-export interface TopicFormProps {
-  useComponentAs: "ADD" | "EDIT";
-  id?: number;
-  onClose?: () => void;
-  isDialog?: boolean;
-  onSubmit?: (success: boolean) => void;
-  refetch?: () => void;
-}
+export interface TopicFormProps extends FormProps {}
 
-export interface DialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onClose: () => void;
-  type: "add" | "edit";
-  id?: string;
-  refetch?: () => void;
-}
+export interface TopicDialogProps extends DialogProps {}
 
-export interface GetAllTopicsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  startDate?: string;
-  endDate?: string;
-}
+export interface GetAllTopicsParams extends PaginationParams {}
 
-export interface FetchTopicResponse {
-  data: {
-    data: Topic[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  };
-  message?: string;
-  success?: boolean;
-}
+export interface FetchTopicResponse extends ApiPaginatedResponse<Topic> {}
 
 export interface CreateTopicRequest {
   topics: {
     topic: string;
-    category: "CUSTOMER" | "EMPLOYEE" | "COMPANY";
+    category: TopicCategory;
   }[];
 }
 
-export interface CreateTopicResponse {
-  data: Topic;
-  message: string;
-  success: boolean;
-}
+export interface CreateTopicResponse extends ApiSuccessResponse<Topic> {}

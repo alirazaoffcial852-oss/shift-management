@@ -1,4 +1,4 @@
-import { locomotive } from "@/types/locomotive";
+import { Locomotive } from "@/types/locomotive";
 import { BvProject } from "./bvProject";
 import { Customer } from "./customer";
 import { Employee } from "./employee";
@@ -49,7 +49,7 @@ export type Shift = {
     address: string;
     name: string;
   };
-  locomotive?: locomotive;
+  locomotive?: Locomotive;
   status: STATUS;
   locomotive_id?: string;
   note?: string;

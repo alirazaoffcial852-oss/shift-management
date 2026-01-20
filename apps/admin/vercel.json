@@ -1,5 +1,0 @@
-{
-  "installCommand": "",
-  "buildCommand": "pnpm build --filter=admin",
-  "framework": "nextjs"
-}

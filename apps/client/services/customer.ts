@@ -1,4 +1,5 @@
 import { STATUS } from "@/types/shared/global";
+import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 
 class CustomerService {
@@ -9,15 +10,13 @@ class CustomerService {
     status: STATUS = "ACTIVE",
     search?: string
   ) {
-    const searchParams = new URLSearchParams();
-    searchParams.append("page", page.toString());
-    searchParams.append("limit", limit.toString());
-    searchParams.append("company_id", company_id.toString());
-    searchParams.append("status", status);
-
-    if (search) {
-      searchParams.append("search", search);
-    }
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      company_id,
+      status,
+      search,
+    });
 
     return await http.get(`/customers?${searchParams.toString()}`);
   }

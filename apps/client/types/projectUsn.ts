@@ -87,6 +87,7 @@ export interface WagonOption {
   status: string;
   nextStatus: string;
   currentLocation: string;
+  arrivalLocation?: string;
   loadedEmptyLocation: string;
   typeOfWagon: string;
   maxCapacity: string;

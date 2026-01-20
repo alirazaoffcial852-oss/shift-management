@@ -3,6 +3,7 @@
     "status": "Status",
     "buttons": {
       "submit": "Submit",
+      "submitting": "Submitting...",
       "cancel": "Cancel",
       "save": "Save",
       "update": "Update",
@@ -1191,6 +1192,8 @@
           "status": "Status",
           "wagonType": "Wagon Type",
           "rail": "Rail",
+          "date": "Date",
+          "reset": "Reset Filters",
           "statusOptions": {
             "EMPTY": "Empty",
             "PLANNED_TO_BE_LOADED": "Planned To Be Loaded",
@@ -1213,6 +1216,7 @@
           "status": "Status",
           "nextStatus": "Next Status",
           "currentLocation": "Current Location",
+          "arrivalLocation": "Planned Arrival Location",
           "loadedEmptyLocation": "Loaded / Empty Location",
           "typeOfWagon": "Type of Wagon",
           "maxCapacity": "Max Capacity",
@@ -1387,6 +1391,7 @@
       "lastUpdated": "Last Updated:",
       "statusHistory": "Status History",
       "currentLocation": "Current Location:",
+      "arrivalLocation": "Planned Arrival Location:",
       "na": "N/A",
       "noStatusHistoryAvailable": "No status history available",
       "noWagonsFoundMatchingYourSearch": "No wagons found matching your search",
@@ -1832,7 +1837,8 @@
     "receive": "Receive",
     "approve": "Approve",
     "reject": "Reject",
-    "submit": "Submit"
+    "submit": "Submit",
+    "submitting": "Submitting..."
   },
   "pdf": {
     "bautagesbericht": "Bautagesbericht",

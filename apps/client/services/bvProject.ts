@@ -1,4 +1,5 @@
 import { STATUS } from "@/types/shared/global";
+import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 
 class BvProjectService {
@@ -10,18 +11,16 @@ class BvProjectService {
     project_id?: number | null,
     search?: string
   ) {
-    let params = new URLSearchParams();
-    params.set("page", page.toString());
-    params.set("limit", limit.toString());
-    params.set("company_id", company_id.toString());
-    params.set("status", status);
-    if (project_id) {
-      params.set("project_id", project_id.toString());
-    }
-    if (search) {
-      params.set("search", search);
-    }
-    return await http.get(`/bv-projects?${params.toString()}`);
+    const searchParams = buildSearchParams({
+      page,
+      limit,
+      company_id,
+      status,
+      project_id,
+      search,
+    });
+
+    return await http.get(`/bv-projects?${searchParams.toString()}`);
   }
 
   async getBvProjectById(id: number) {

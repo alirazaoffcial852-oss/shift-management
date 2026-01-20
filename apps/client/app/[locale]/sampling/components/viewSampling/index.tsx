@@ -34,7 +34,7 @@ const ViewSampling = () => {
     setSamplings,
     currentPage,
     totalPages,
-    setCurrentPage,
+    onPageChange,
     handleSearch,
     removeSampling,
     tabValue,
@@ -147,8 +147,10 @@ const ViewSampling = () => {
         actionsHeader={taction("action")}
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        onPageChange={onPageChange}
         onSearchChange={handleSearch}
+        search={true}
+        pagination={true}
       />
 
       <SamplingDialog

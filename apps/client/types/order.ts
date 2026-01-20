@@ -1,4 +1,7 @@
-export interface Order {
+import { PaginatedResponse } from "./pagination";
+import { BaseEntity, BaseEntityRequired, ApiSuccessResponse, FormErrors } from "./shared/global";
+
+export interface Order extends BaseEntity {
   status: string;
   id: number;
   supplier_id: number;
@@ -11,8 +14,6 @@ export interface Order {
   return_schedule: string;
   date?: string;
   remaining_tonnage?: number;
-  created_at?: string;
-  updated_at?: string;
   supplier?: SupplierLocation;
   tariff?: TariffLocation;
 }
@@ -30,42 +31,23 @@ export interface CreateOrderData {
 
 export interface UpdateOrderData extends Partial<CreateOrderData> {}
 
-export interface OrderResponse {
-  data: Order;
-  message: string;
-}
+export interface OrderResponse extends ApiSuccessResponse<Order> {}
 
-export interface OrdersResponse {
-  data: Order[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    total_pages: number;
-  };
-}
+export interface OrdersResponse extends PaginatedResponse<Order> {}
 
-export interface SupplierLocation {
-  id: number;
+export interface SupplierLocation extends BaseEntityRequired {
   name: string;
   location: string;
   type: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface TariffLocation {
-  id: number;
+export interface TariffLocation extends BaseEntityRequired {
   name: string;
   location: string;
   type: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface FormErrors {
-  [key: string]: string;
-}
+export interface OrderFormErrors extends FormErrors {}
 
 export const wagonTypeDisplayNames = [
   "Eaos",

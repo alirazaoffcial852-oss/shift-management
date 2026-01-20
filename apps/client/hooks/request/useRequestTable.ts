@@ -34,7 +34,7 @@ export const useRequestTable = (initialPage = 1, limit = 20) => {
       const response = await TimeSheetService.getTimeSheet(currentPage, limit, status, company?.id.toString(), employeeId);
       setTimeSheets(response.data.data || []);
       setTotalCount(response.data.pagination.total || 0);
-      setTotalPages(Math.ceil((response.data.pagination.totalPages || 0) / limit));
+      setTotalPages(response.data.pagination.totalPages || 0);
       return response;
     } catch (err: any) {
       const errorMsg = err.message || "Failed to fetch timeSheets";

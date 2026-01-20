@@ -56,7 +56,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         <SMSCombobox
           label={` ${tsidebar("customer")}`}
           placeholder={` ${tsidebar("customer")}`}
-          searchPlaceholder={t("common.search_customers")}
+          searchPlaceholder={t("search_customers")}
           value={project.customer_id}
           onValueChange={(value) => handleInputChange("customer_id", value)}
           options={customers.map((customer: any) => ({
@@ -66,7 +66,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
           required
           error={errors.customer_id}
           addNew={{
-            text: t("common.add_customer"),
+            text: t("add_customer"),
             onClick: () => setAddCustomerDialog(true),
           }}
           hasMore={pagination.page < pagination.total_pages}

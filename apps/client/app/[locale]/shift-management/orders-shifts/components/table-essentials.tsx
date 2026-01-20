@@ -127,11 +127,11 @@ export const getActions = (
       element: (order: Order) => (
         <Link
           href={`/orders/${order.id}/edit?returnTo=${currentView || "table"}`}
-          className="w-full block py-2 px-3 hover:bg-gray-100 transition-colors"
+          className="w-full block py-2 px-3 hover:bg-green-50 transition-colors"
         >
           <span className="flex items-center gap-2">
-            <Edit2Icon className="w-4 h-4 text-gray-600" />
-            <span className="text-sm text-gray-800">
+            <Edit2Icon className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-600">
               {translate("actions.edit", "Edit")}
             </span>
           </span>

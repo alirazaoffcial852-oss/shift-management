@@ -10,9 +10,19 @@ import { CalendarFilterState } from "@/components/Calendar/CalendarFilters";
 
 export const useGetShift = () => {
   const currentPath = usePathname();
-  const pathType = currentPath.includes("/weekly") ? "weekly" : currentPath.includes("/monthly") ? "monthly" : null;
+  const pathType = currentPath.includes("/weekly")
+    ? "weekly"
+    : currentPath.includes("/monthly")
+      ? "monthly"
+      : null;
 
-  const { data, setWeeklyShifts, setSelectedShifts, setGlobalShifts, clearSelectedShifts } = useShift();
+  const {
+    data,
+    setWeeklyShifts,
+    setSelectedShifts,
+    setGlobalShifts,
+    clearSelectedShifts,
+  } = useShift();
   const { company } = useCompany();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +37,13 @@ export const useGetShift = () => {
       if (!startDate && !endDate) return;
       if (pathType === "weekly") return;
 
-      const response = await ShiftService.getAllShifts(startDate?.toString() || "", endDate?.toString() || "", null, null, company?.id);
+      const response = await ShiftService.getAllShifts(
+        startDate?.toString() || "",
+        endDate?.toString() || "",
+        null,
+        null,
+        company?.id
+      );
 
       setGlobalShifts(response.data.data || []);
     } catch (err: any) {
@@ -41,26 +57,89 @@ export const useGetShift = () => {
   }, [startDate, endDate, pathType, setGlobalShifts, company]);
 
   const fetchWeeklyShifts = useCallback(
-    async (startDate: Date | null, endDate: Date | null, roleIds: number[] = [], locomotiveIds: number[] = [], company: Company | null) => {
+    async (
+      startDate: Date | null,
+      endDate: Date | null,
+      roleIds: number[] = [],
+      locomotiveIds: number[] = [],
+      company: Company | null,
+      filterParams?: CalendarFilterState
+    ) => {
+      console.log("fetchWeeklyShifts called with:", {
+        startDate,
+        endDate,
+        roleIds,
+        locomotiveIds,
+        company: company?.id,
+        filterParams,
+      });
+
       setIsLoading(true);
       setError(null);
       try {
-        if (!startDate || !endDate || !company?.id) return;
+        if (!startDate || !endDate || !company?.id) {
+          console.log("Early return - missing required params:", {
+            hasStartDate: !!startDate,
+            hasEndDate: !!endDate,
+            hasCompanyId: !!company?.id,
+          });
+          return;
+        }
 
-        const formattedStartDate = startDate ? startDate.toISOString().split("T")[0] : "";
-        const formattedEndDate = endDate ? endDate.toISOString().split("T")[0] : "";
+        const formattedStartDate = startDate
+          ? startDate.toISOString().split("T")[0]
+          : "";
+        const formattedEndDate = endDate
+          ? endDate.toISOString().split("T")[0]
+          : "";
 
-        const response = await ShiftService.getWeeklyShifts(formattedStartDate || "", formattedEndDate || "", company?.id || 0, roleIds, locomotiveIds.length > 0);
-
-        // Set shifts for roles
-        roleIds.forEach((roleId) => {
-          const roleKey = `role${roleId}`;
-          const roleShifts = response.data.shifts_against_roles[`role${roleId}`] || [];
-          setWeeklyShifts(roleKey, roleShifts);
+        console.log("Calling ShiftService.getWeeklyShifts with:", {
+          formattedStartDate,
+          formattedEndDate,
+          companyId: company.id,
+          roleIds,
+          hasLocomotives: locomotiveIds.length > 0,
+          filterParams,
         });
-        if (locomotiveIds.length > 0) {
-          const locomotiveShifts = response.data.shifts_against_locomotives || [];
 
+        const response = await ShiftService.getWeeklyShifts(
+          formattedStartDate || "",
+          formattedEndDate || "",
+          company?.id || 0,
+          roleIds,
+          locomotiveIds.length > 0,
+          filterParams
+        );
+
+        console.log("ShiftService.getWeeklyShifts response:", response);
+
+        if (roleIds.length > 0) {
+          roleIds.forEach((roleId) => {
+            const roleKey = `role${roleId}`;
+            const roleShifts =
+              response.data.shifts_against_roles?.[`role${roleId}`] || [];
+            setWeeklyShifts(roleKey, roleShifts);
+          });
+        } else {
+          const allRoleShifts: Shift[] = [];
+          if (response.data.shifts_against_roles) {
+            Object.values(response.data.shifts_against_roles).forEach(
+              (shifts: any) => {
+                if (Array.isArray(shifts)) {
+                  allRoleShifts.push(...shifts);
+                }
+              }
+            );
+          }
+
+          if (allRoleShifts.length > 0) {
+            console.log("All role shifts:", allRoleShifts.length);
+          }
+        }
+
+        if (locomotiveIds.length > 0) {
+          const locomotiveShifts =
+            response.data.shifts_against_locomotives || [];
           setWeeklyShifts("locomotives", locomotiveShifts);
         }
 
@@ -84,7 +163,10 @@ export const useGetShift = () => {
   }, [startDate, endDate]);
 
   const refetchWithFilters = useCallback(
-    async (filterParams?: CalendarFilterState, forceDates?: { start: Date; end: Date }) => {
+    async (
+      filterParams?: CalendarFilterState,
+      forceDates?: { start: Date; end: Date }
+    ) => {
       console.log("refetchWithFilters called with:", filterParams, forceDates);
       setIsLoading(true);
       setError(null);
@@ -104,16 +186,35 @@ export const useGetShift = () => {
           return;
         }
 
-        const employee_ids = filterParams?.employee_id ? filterParams.employee_id.map((id) => parseInt(id)) : null;
+        const employee_ids = filterParams?.employee_id
+          ? filterParams.employee_id.map((id) => parseInt(id))
+          : null;
 
-        const response = await ShiftService.getAllShifts(from.toString(), to.toString(), employee_ids, filterParams?.status || "ALL", company?.id, {
-          project_id: filterParams?.project_id ? filterParams.project_id.map((id) => parseInt(id)) : null,
-          product_id: filterParams?.product_id ? filterParams.product_id.map((id) => parseInt(id)) : null,
-          bv_project_id: filterParams?.bv_project_id ? filterParams.bv_project_id.map((id) => parseInt(id)) : null,
-          customer_id: filterParams?.customer_id ? filterParams.customer_id.map((id) => parseInt(id)) : null,
-          personnel_id: filterParams?.personnel_id ? filterParams.personnel_id.map((id) => parseInt(id)) : null,
-          location: filterParams?.location || null,
-        });
+        const response = await ShiftService.getAllShifts(
+          from.toString(),
+          to.toString(),
+          employee_ids,
+          filterParams?.status || "ALL",
+          company?.id,
+          {
+            project_id: filterParams?.project_id
+              ? filterParams.project_id.map((id) => parseInt(id))
+              : null,
+            product_id: filterParams?.product_id
+              ? filterParams.product_id.map((id) => parseInt(id))
+              : null,
+            bv_project_id: filterParams?.bv_project_id
+              ? filterParams.bv_project_id.map((id) => parseInt(id))
+              : null,
+            customer_id: filterParams?.customer_id
+              ? filterParams.customer_id.map((id) => parseInt(id))
+              : null,
+            personnel_id: filterParams?.personnel_id
+              ? filterParams.personnel_id.map((id) => parseInt(id))
+              : null,
+            location: filterParams?.location || null,
+          }
+        );
 
         setGlobalShifts(response.data.data || []);
       } catch (err: any) {

@@ -1,3 +1,5 @@
+import { PaginationMeta, PaginatedResponseWithMeta } from "./pagination";
+
 export interface HistoryOfMaintenanceItem {
   id: number;
   actionName: string;
@@ -6,19 +8,7 @@ export interface HistoryOfMaintenanceItem {
   completionDate: string;
 }
 
-export interface HistoryOfMaintenancePagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  limit: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-export interface HistoryOfMaintenanceData {
-  data: HistoryOfMaintenanceItem[];
-  pagination: HistoryOfMaintenancePagination;
-}
+export interface HistoryOfMaintenanceData extends PaginatedResponseWithMeta<HistoryOfMaintenanceItem> {}
 
 export interface FetchHistoryOfMaintenanceResponse {
   status: string;

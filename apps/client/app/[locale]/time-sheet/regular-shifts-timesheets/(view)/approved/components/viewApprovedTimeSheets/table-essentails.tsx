@@ -1,4 +1,4 @@
-type TranslationFunction = (key: string) => string;
+import { TranslationFunction } from "@/types/components/common";
 
 export const getColumns = (t: TranslationFunction) => [
   {

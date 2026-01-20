@@ -39,6 +39,7 @@ const StaffForm: React.FC<EditFormProps> = ({
     handleLoadMoreRoles,
     handleSearchRoles,
     handleSubmit,
+    loading: isSubmitting,
   } = useStaffForm(Number(id));
   const t = useTranslations("common");
   const tcommon = useTranslations("common");
@@ -395,9 +396,9 @@ const StaffForm: React.FC<EditFormProps> = ({
         <SMSButton
           className="bg-black rounded-full"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={isSubmitting || loading}
         >
-          {tactions("submit")}
+          {isSubmitting ? "Submitting..." : tactions("submit")}
         </SMSButton>
       </div>
     </div>

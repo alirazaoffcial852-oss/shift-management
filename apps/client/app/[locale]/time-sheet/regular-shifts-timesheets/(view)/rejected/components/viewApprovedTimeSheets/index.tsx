@@ -2,13 +2,12 @@
 import React from "react";
 import { ACTIONS, getColumns } from "./table-essentails";
 import { SMSTable } from "@workspace/ui/components/custom/SMSTable";
-import { useTimeSheetTable } from "@/hooks/timeSheet/useTimeSheetTable";
-import { Timesheet } from "@/types/timeSheet";
 import { useTranslations } from "next-intl";
+import { useUSTimeSheetTable } from "@/hooks/timeSheet/useUSTTimeSheetTable";
 const ViewRejectedTimeSheet = () => {
   const t = useTranslations("timesheet");
   const { timeSheets, currentPage, totalPages, setCurrentPage, handleSearch } =
-    useTimeSheetTable();
+      useUSTimeSheetTable();
 
   return (
     <SMSTable

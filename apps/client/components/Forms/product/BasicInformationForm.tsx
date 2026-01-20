@@ -7,7 +7,7 @@ import { Switch } from "@workspace/ui/components/switch";
 import { Label } from "@workspace/ui/components/label";
 import { Product } from "@/types/product";
 import { AddSubcategoryDialog } from "@/components/Dialog/AddSubcategoryDialog";
-import { locomotive } from "@/types/locomotive";
+import { Locomotive } from "@/types/locomotive";
 import { Route, RouteOption } from "@/types/shared/route";
 import { BasicInformationProps } from "./components/productForm";
 import { useCompany } from "@/providers/appProvider";
@@ -66,7 +66,7 @@ export function BasicInformationForm({
     });
   };
 
-  const handleAddSubcategory = (newSubcategory: locomotive) => {
+  const handleAddSubcategory = (newSubcategory: Locomotive) => {
     if (!newSubcategory.id) return;
     const newRoute: RouteOption = {
       value: newSubcategory.id.toString(),

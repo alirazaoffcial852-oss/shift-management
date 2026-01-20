@@ -11,7 +11,8 @@ import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Label } from "@workspace/ui/components/label";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
-import { format } from "date-fns";
+import { SMSDatePicker } from "@workspace/ui/components/custom/SMSDatePicker";
+import { format, parse } from "date-fns";
 import { useTranslations } from "next-intl";
 
 interface HandoverBookFormProps {
@@ -51,6 +52,21 @@ const HandoverBookForm = ({
       return format(date, "HH:mm");
     } catch {
       return timeString;
+    }
+  };
+
+  const parseDateString = (dateStr: string | null | undefined): Date | null => {
+    if (!dateStr) return null;
+    try {
+      const parsed = parse(dateStr, "dd.MM.yyyy", new Date());
+      if (!isNaN(parsed.getTime())) return parsed;
+      const parsed2 = parse(dateStr, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed2.getTime())) return parsed2;
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) return date;
+      return null;
+    } catch {
+      return null;
     }
   };
 
@@ -123,13 +139,27 @@ const HandoverBookForm = ({
                   disabled
                 />
 
-                <SMSInput
+                <SMSDatePicker
                   label={t("date")}
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
+                  value={{
+                    startDate: parseDateString(formData.date),
+                    endDate: null,
+                  }}
+                  onChange={(value) => {
+                    if (value?.startDate) {
+                      handleInputChange(
+                        "date",
+                        format(new Date(value.startDate), "dd.MM.yyyy")
+                      );
+                    } else {
+                      handleInputChange("date", "");
+                    }
+                  }}
                   error={errors.date}
                   required
+                  placeholder="dd.MM.yyyy"
+                  displayFormat="DD.MM.YYYY"
+                  asSingle={true}
                 />
 
                 <SMSInput
@@ -635,7 +665,9 @@ const HandoverBookForm = ({
             onOpenChange={setSignatureModalOpen}
           >
             <DialogContent className="sm:max-w-[500px]">
-              <h3 className="text-lg font-semibold mb-4">{t("addSignature")}</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                {t("addSignature")}
+              </h3>
               <SignaturePad
                 onSave={async (signature) => {
                   await handleSignature(signature);

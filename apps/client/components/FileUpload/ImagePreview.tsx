@@ -14,9 +14,13 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
   onRemove,
   alt = "Preview image",
 }) => {
-  const previewUrl = file ? URL.createObjectURL(file) : IMAGE_URL + imageUrl;
+  const previewUrl = file
+    ? URL.createObjectURL(file)
+    : imageUrl?.startsWith("http") || imageUrl?.startsWith("https")
+      ? imageUrl
+      : `${IMAGE_URL?.replace(/\/$/, "")}/${imageUrl?.replace(/^\//, "")}`;
 
-  if (!previewUrl) return null;
+  if (!imageUrl && !file) return null;
 
   const handleImageClick = () => {
     // Open the image in a new tab

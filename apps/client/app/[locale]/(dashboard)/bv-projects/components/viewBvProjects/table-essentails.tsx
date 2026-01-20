@@ -33,10 +33,10 @@ export const getActions = () => {
     {
       label: tActions("edit"),
       element: (bvProject: BvProject) => (
-        <Link href={`/bv-projects/${bvProject.id}/edit`} className="w-full block py-2 px-3 hover:bg-gray-100 transition-colors">
+        <Link href={`/bv-projects/${bvProject.id}/edit`} className="w-full block py-2 px-3 hover:bg-green-50 transition-colors">
           <span className="flex items-center gap-2">
-            <Edit2Icon className="w-4 h-4 text-gray-800" />
-            <span className="text-sm text-gray-800">{tActions("edit")}</span>
+            <Edit2Icon className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-green-600">{tActions("edit")}</span>
           </span>
         </Link>
       ),
@@ -82,9 +82,9 @@ export const getActions = () => {
             description: `${tMessages("archiveConfirm")}  ${tLabel("bvProject")}  ${tMessages("commonMessage")} <b>${bvProject.name}</b>?`,
             confirmText: tActions("archive"),
             buttonText: tActions("archive"),
-            variant: "destructive",
+            variant: "default",
             icon: Archive,
-            style: "hover:bg-red-50 text-blue-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             archivedProject: async (id: number) => {
@@ -114,9 +114,9 @@ export const getActions = () => {
             description: `${tMessages("activateConfirm")}  ${tLabel("bvProject")}  ${tMessages("commonMessage")}  <b>${bvProject.name}</b>?`,
             confirmText: tActions("activate"),
             buttonText: tActions("activate"),
-            variant: "destructive",
+            variant: "default",
             icon: Activity,
-            style: "hover:bg-red-50 text-blue-600",
+            style: "hover:bg-blue-50 text-blue-600",
           }}
           services={{
             activateProject: async (id: number) => {

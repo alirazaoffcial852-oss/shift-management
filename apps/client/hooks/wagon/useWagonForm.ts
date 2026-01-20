@@ -378,32 +378,41 @@ export const useWagonForm = (id?: number, onClose?: () => void) => {
   };
 };
 
-export const useWagonTable = (searchParams: {
-  page?: string;
-  search?: string;
-  status?: string;
-}) => {
+export const useWagonTable = (initialPage = 1, initialSearch = "", limit = 20) => {
   const router = useRouter();
   const t = useTranslations("messages");
   const [wagons, setWagons] = useState<Wagon[]>([]);
-  const [currentPage, setCurrentPage] = useState(
-    parseInt(searchParams.page || "1")
-  );
-  const [totalPages, setTotalPages] = useState(1);
+  
+  const [pagination, setPagination] = useState({
+    page: initialPage,
+    limit: limit,
+    total: 0,
+    total_pages: 0,
+  });
+
   const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(searchParams.search || "");
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
 
   const fetchWagons = useCallback(
     async (page: number = 1, search: string = "") => {
       try {
         setIsLoading(true);
-        const response = await WagonService.getAllWagons(page, 20, search);
+        const response = await WagonService.getAllWagons(
+          page,
+          pagination.limit,
+          search
+        );
 
         if (response.data) {
           setWagons(response.data.data);
-          if (response.pagination) {
-            setTotalPages(response.pagination.totalPages);
+          if (response.data.pagination) {
+             setPagination({
+              page: response.data.pagination.page,
+              limit: response.data.pagination.limit,
+              total: response.data.pagination.total,
+              total_pages: response.data.pagination.total_pages,
+            });
           }
         }
       } catch (error) {
@@ -413,12 +422,12 @@ export const useWagonTable = (searchParams: {
         setIsLoading(false);
       }
     },
-    [t]
+    [t, pagination.limit]
   );
 
   useEffect(() => {
-    fetchWagons(currentPage, searchTerm);
-  }, [currentPage, searchTerm, fetchWagons]);
+    fetchWagons(pagination.page, searchTerm);
+  }, [pagination.page, searchTerm, fetchWagons]);
 
   const handleEdit = useCallback(
     (wagon: any) => {
@@ -430,9 +439,9 @@ export const useWagonTable = (searchParams: {
 
   const handleDelete = useCallback(
     (wagon: any) => {
-      fetchWagons(currentPage, searchTerm);
+      fetchWagons(pagination.page, searchTerm);
     },
-    [currentPage, searchTerm, fetchWagons]
+    [pagination.page, searchTerm, fetchWagons]
   );
 
   const handleView = useCallback(
@@ -443,30 +452,14 @@ export const useWagonTable = (searchParams: {
     [router]
   );
 
-  const handlePageChange = useCallback(
-    (page: number) => {
-      setCurrentPage(page);
-      const params = new URLSearchParams(searchParams);
-      params.set("page", page.toString());
-      router.push(`/wagon?${params.toString()}`);
-    },
-    [searchParams, router]
-  );
-
   const handleSearch = useCallback(
     (search: string) => {
       setSearchTerm(search);
-      setCurrentPage(1);
-      const params = new URLSearchParams(searchParams);
-      if (search) {
-        params.set("search", search);
-      } else {
-        params.delete("search");
-      }
-      params.delete("page");
-      router.push(`/wagon?${params.toString()}`);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+      // URL update is removed as state handles it, but optionally could keep for deep linking if desired.
+      // For consistency with other refactors, relying on internal state.
     },
-    [searchParams, router]
+    []
   );
 
   const handleFilter = useCallback((filterValue: string) => {
@@ -498,10 +491,13 @@ export const useWagonTable = (searchParams: {
     };
   }, []);
 
+  const formattedWagons = wagons.map(transformWagonData);
+
   return {
-    wagons,
-    currentPage,
-    totalPages,
+    wagons: formattedWagons,
+    rawWagons: wagons,
+    currentPage: pagination.page,
+    totalPages: pagination.total_pages,
     isLoading,
     searchTerm,
     selectedRows,
@@ -509,9 +505,10 @@ export const useWagonTable = (searchParams: {
     handleEdit,
     handleDelete,
     handleView,
-    handlePageChange,
+    onPageChange: (page: number) => setPagination((prev) => ({ ...prev, page })),
     handleSearch,
     handleFilter,
     transformWagonData,
+    pagination
   };
 };
