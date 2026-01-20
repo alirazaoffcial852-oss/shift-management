@@ -4,7 +4,11 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { getToken } from "./getToken";
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+const isProduction = typeof window !== "undefined" && window.location.protocol === "https:";
+const baseURL = isProduction 
+  ? "/api/proxy"  
+  : process.env.NEXT_PUBLIC_API_BASE_URL;
 const instance = axios.create({
   baseURL,
   headers: {
