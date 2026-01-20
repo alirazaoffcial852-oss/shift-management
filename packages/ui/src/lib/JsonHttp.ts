@@ -30,9 +30,11 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    if (error.response.status === 401) {
+    if (error.response?.status === 401) {
       localStorage.clear();
-      window.location.replace("/sign-in");
+      const authUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "https://shift-management-auth.vercel.app";
+      const locale = window.location.pathname.split("/")[1] || "en";
+      window.location.href = `${authUrl}/${locale}/sign-in`;
     } else {
       console.error(error);
     }

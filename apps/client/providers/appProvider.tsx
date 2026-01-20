@@ -118,8 +118,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setPermissions([]);
     setIsAuthenticated(false);
-    router.replace(`${process.env.NEXT_PUBLIC_AUTH_URL}/${locale}/sign-in`);
-  }, [router, locale]);
+    const authUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "https://shift-management-auth.vercel.app";
+    window.location.href = `${authUrl}/${locale}/sign-in`;
+  }, [locale]);
 
   const setCompanies = useCallback((newCompanies: ExtendedCompany[]) => {
     setCompaniesState(newCompanies);
@@ -205,9 +206,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error("Authentication error:", error);
         if (!loading) {
-          window.location.replace(
-            `${process.env.NEXT_PUBLIC_AUTH_URL}/${locale}/sign-in`
-          );
+          const authUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "https://shift-management-auth.vercel.app";
+          window.location.href = `${authUrl}/${locale}/sign-in`;
         }
       } finally {
         setLoading(false);
