@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm build --filter=admin",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "npx -y pnpm@10.5.2 build --filter=admin",
+  "installCommand": "npx -y pnpm@10.5.2 install --frozen-lockfile",
   "outputDirectory": "apps/admin/.next",
   "framework": "nextjs"
 }
