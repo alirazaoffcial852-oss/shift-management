@@ -44,7 +44,7 @@ async function handleRequest(
   request: NextRequest,
   params: Promise<{ path: string[] }>,
   method: string
-) {
+): Promise<NextResponse> {
   try {
     const { path } = await params;
     const pathString = path.join("/");
@@ -76,7 +76,7 @@ async function handleRequest(
 
     // Handle insecure HTTPS with Node's https module
     if (isHttps) {
-      return new Promise((resolve) => {
+      return new Promise<NextResponse>((resolve) => {
         const options: https.RequestOptions = {
           hostname: parsedUrl.hostname,
           port: parsedUrl.port || 443,
