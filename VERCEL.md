@@ -163,7 +163,7 @@ cd ../.. && npx -y pnpm@10.5.2 install --frozen-lockfile
 
 | Key | Value | Apply To |
 |-----|-------|----------|
-| `NEXT_PUBLIC_API_BASE_URL` | `http://69.62.107.139/api` | All |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://ec2-3-64-58-144.eu-central-1.compute.amazonaws.com/api` | All |
 | `NEXT_PUBLIC_ADMIN_BASE_URL` | `https://shift-management-admin-eight.vercel.app` | All |
 | `NEXT_PUBLIC_CLIENT_BASE_URL` | `https://shift-management-client.vercel.app` | All |
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1` | All |
@@ -172,7 +172,7 @@ cd ../.. && npx -y pnpm@10.5.2 install --frozen-lockfile
 
 | Key | Value | Apply To |
 |-----|-------|----------|
-| `NEXT_PUBLIC_API_BASE_URL` | `http://69.62.107.139/api` | All |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://ec2-3-64-58-144.eu-central-1.compute.amazonaws.com/api` | All |
 | `NEXT_PUBLIC_AUTH_BASE_URL` | `https://shift-management-auth.vercel.app` | All |
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1` | All |
 
@@ -180,7 +180,7 @@ cd ../.. && npx -y pnpm@10.5.2 install --frozen-lockfile
 
 | Key | Value | Apply To |
 |-----|-------|----------|
-| `NEXT_PUBLIC_API_BASE_URL` | `http://69.62.107.139/api` | All |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://ec2-3-64-58-144.eu-central-1.compute.amazonaws.com/api` | All |
 | `NEXT_PUBLIC_AUTH_BASE_URL` | `https://shift-management-auth.vercel.app` | All |
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1` | All |
 
@@ -225,15 +225,15 @@ cd ../.. && npx -y pnpm@10.5.2 install --frozen-lockfile
 }
 ```
 
-## 🔄 API Proxy for Mixed Content (HTTPS → HTTP)
+## 🔄 API Proxy for Mixed Content (HTTPS → Insecure HTTPS/HTTP)
 
 ### Problem
 
-When frontend is HTTPS but backend is HTTP, browsers block requests (Mixed Content error).
+When frontend is HTTPS but backend is HTTP or insecure HTTPS (self-signed certificate), browsers block requests (Mixed Content error).
 
 ### Solution: Next.js API Proxy Route
 
-Created proxy routes that forward HTTPS requests to HTTP backend.
+Created proxy routes that forward HTTPS requests to insecure HTTPS/HTTP backend.
 
 ### Files Created
 
@@ -242,7 +242,8 @@ Created proxy routes that forward HTTPS requests to HTTP backend.
 
 These routes:
 - Accept HTTPS requests from frontend
-- Forward to HTTP backend (server-to-server, no mixed content)
+- Forward to insecure HTTPS/HTTP backend (server-to-server, no mixed content)
+- Handle insecure HTTPS certificates with `rejectUnauthorized: false`
 - Return response to frontend
 
 ### HTTP Client Configuration
@@ -257,8 +258,15 @@ const baseURL = isProduction
 ```
 
 **How it works:**
-- **Production (HTTPS)**: Frontend → `/api/proxy/auth/verify-token` → Next.js server → `http://backend/api/auth/verify-token`
+- **Production (HTTPS)**: Frontend → `/api/proxy/auth/verify-token` → Next.js server → `https://backend/api/auth/verify-token` (insecure cert handled)
 - **Development (HTTP)**: Frontend → `http://backend/api/auth/verify-token` (direct)
+
+### Handling Insecure HTTPS Backends
+
+The proxy automatically handles insecure HTTPS certificates (self-signed or expired):
+- Uses Node's `https` module with `rejectUnauthorized: false`
+- Works with both HTTP and HTTPS backends
+- Browser never sees the insecure certificate (proxy handles it server-side)
 
 ## 🔐 Authentication & Redirects
 
@@ -420,7 +428,7 @@ Logout redirects to `http://localhost:3000` instead of production URL.
 - **Auth App**: `https://shift-management-auth.vercel.app`
 - **Admin App**: `https://shift-management-admin-eight.vercel.app`
 - **Client App**: `https://shift-management-client.vercel.app`
-- **Backend API**: `http://69.62.107.139/api`
+- **Backend API**: `https://ec2-3-64-58-144.eu-central-1.compute.amazonaws.com/api` (insecure HTTPS - handled by proxy)
 
 ## 🎯 Quick Reference: Vercel Settings Template
 
