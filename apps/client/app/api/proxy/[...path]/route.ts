@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import https from "https";
+import http from "http";
+import { URL } from "url";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://69.62.107.139/api";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://ec2-3-64-58-144.eu-central-1.compute.amazonaws.com/api";
 
 export async function GET(
   request: NextRequest,
@@ -68,6 +71,72 @@ async function handleRequest(
       }
     }
 
+    const parsedUrl = new URL(url);
+    const isHttps = parsedUrl.protocol === "https:";
+
+    // Handle insecure HTTPS with Node's https module
+    if (isHttps) {
+      return new Promise((resolve) => {
+        const options: https.RequestOptions = {
+          hostname: parsedUrl.hostname,
+          port: parsedUrl.port || 443,
+          path: parsedUrl.pathname + parsedUrl.search,
+          method,
+          headers: headers as Record<string, string>,
+          rejectUnauthorized: false, // Allow insecure HTTPS certificates
+        };
+
+        const req = https.request(options, (res) => {
+          let data = "";
+          res.on("data", (chunk) => {
+            data += chunk.toString();
+          });
+          res.on("end", () => {
+            let responseData: any;
+            try {
+              responseData = JSON.parse(data);
+            } catch {
+              responseData = data;
+            }
+            resolve(
+              NextResponse.json(responseData, {
+                status: res.statusCode || 200,
+                statusText: res.statusMessage,
+                headers: {
+                  "Content-Type": res.headers["content-type"] || "application/json",
+                },
+              })
+            );
+          });
+        });
+
+        req.on("error", (error) => {
+          console.error("HTTPS proxy error:", error);
+          resolve(
+            NextResponse.json(
+              { error: "Proxy request failed", message: error.message },
+              { status: 500 }
+            )
+          );
+        });
+
+        if (body) {
+          if (body instanceof Blob) {
+            body.arrayBuffer().then((buffer) => {
+              req.write(Buffer.from(buffer));
+              req.end();
+            });
+          } else {
+            req.write(body);
+            req.end();
+          }
+        } else {
+          req.end();
+        }
+      });
+    }
+
+    // Handle HTTP with regular fetch
     const response = await fetch(url, {
       method,
       headers,
