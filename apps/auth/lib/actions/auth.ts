@@ -16,19 +16,20 @@ export async function login(email: string, password: string) {
 
   if (isHttps) {
     return new Promise<{ data: any; status: number; statusText: string }>((resolve, reject) => {
-      const formDataEntries: string[] = [];
-      formdata.forEach((value, key) => {
-        if (value instanceof File) {
-          formDataEntries.push(`Content-Disposition: form-data; name="${key}"; filename="${value.name}"\r\nContent-Type: ${value.type || "application/octet-stream"}\r\n\r\n`);
-        } else {
-          formDataEntries.push(`Content-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`);
-        }
-      });
+      const boundary = `----WebKitFormBoundary${Date.now()}`;
+      const CRLF = "\r\n";
       
-      const body = new URLSearchParams();
-      body.append("email", email);
-      body.append("password", password);
-      const bodyString = body.toString();
+      let bodyParts: string[] = [];
+      bodyParts.push(`--${boundary}${CRLF}`);
+      bodyParts.push(`Content-Disposition: form-data; name="email"${CRLF}${CRLF}`);
+      bodyParts.push(`${email}${CRLF}`);
+      bodyParts.push(`--${boundary}${CRLF}`);
+      bodyParts.push(`Content-Disposition: form-data; name="password"${CRLF}${CRLF}`);
+      bodyParts.push(`${password}${CRLF}`);
+      bodyParts.push(`--${boundary}--${CRLF}`);
+      
+      const bodyString = bodyParts.join("");
+      const bodyBuffer = Buffer.from(bodyString);
 
       const options: https.RequestOptions = {
         hostname: parsedUrl.hostname,
@@ -36,9 +37,10 @@ export async function login(email: string, password: string) {
         path: parsedUrl.pathname + parsedUrl.search,
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Content-Length": Buffer.byteLength(bodyString),
+          "Content-Type": `multipart/form-data; boundary=${boundary}`,
+          "Content-Length": bodyBuffer.length.toString(),
         },
+        rejectUnauthorized: false, 
       };
 
       const req = https.request(options, (res) => {
@@ -64,13 +66,13 @@ export async function login(email: string, password: string) {
       req.on("error", (error) => {
         console.error("Login request error:", error);
         reject({
-          data: { message: "Failed to connect to server" },
+          data: { message: `Failed to connect to server: ${error.message}` },
           status: 500,
           statusText: "Internal Server Error",
         });
       });
 
-      req.write(bodyString);
+      req.write(bodyBuffer);
       req.end();
     });
   }
