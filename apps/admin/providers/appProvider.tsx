@@ -75,9 +75,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         return true;
-      } catch (error) {
+      } catch (error: any) {
         console.error("Token verification failed:", error);
-        logout();
+        const status = error?.status || error?.response?.status || error?.data?.status;
+        if (status === 401) {
+          logout();
+          return false;
+        }
+        console.warn("Token verification failed due to network error, not logging out");
         return false;
       } finally {
         setLoading(false);
