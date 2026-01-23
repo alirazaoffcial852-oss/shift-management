@@ -4,6 +4,7 @@ import ProgressSteps from "@workspace/ui/components/custom/ProgressSteps";
 import { FormLayoutProps } from "@workspace/ui/types/formLayout";
 import Image from "next/image";
 import Link from "next/link";
+import { getImagePath } from "@/utils/imagePath";
 
 const ConfigurationLayout = ({
   children,
@@ -15,7 +16,7 @@ const ConfigurationLayout = ({
       <div className="w-[250px] flex-shrink-0">
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src="/images/logo.png"
+            src={getImagePath("/images/logo.png")}
             width={1000}
             height={40}
             alt="Shift Management"

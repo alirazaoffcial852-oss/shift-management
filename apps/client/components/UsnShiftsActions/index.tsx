@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useAuth } from "@/providers/appProvider";
 import { usePermission } from "@/hooks/usePermission";
 import { Plus } from "lucide-react";
+import { getImagePath } from "@/utils/imagePath";
 
 interface UsnShiftsActionsProps {
   selectedShiftsCount?: number;
@@ -24,7 +25,7 @@ const UsnShiftsActions = ({
           <SMSButton
             startIcon={
               <Image
-                src={"/images/shift-active.svg"}
+                src={getImagePath("/images/shift-active.svg")}
                 alt={"Wagon Database"}
                 width={18}
                 height={18.73}

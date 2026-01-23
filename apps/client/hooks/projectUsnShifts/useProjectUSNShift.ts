@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ProjectUSNFormData,
   ProjectUSNFormErrors,
@@ -10,11 +10,12 @@ import { WagonOption, LocomotiveOption } from "@/types/projectUsn";
 import { Product } from "@/types/product";
 import { useOrderTable } from "../order/userOrderTable";
 import { useLocationsList } from "../location/useLocationsList";
+import LocationService from "@/services/location";
 import { useLocomotiveTable } from "../locomotive/useLocomotiveTable";
 import { useCompany } from "@/providers/appProvider";
 import ProjectUSNShiftsService from "@/services/projectUsnShift";
 import { toast } from "sonner";
-import { Location } from "@/types/location";
+import { Location, LocationType } from "@/types/location";
 import { useProjectUsnProduct } from "../projectUsnProduct/useProjectUsnProduct";
 import { useRouter } from "next/navigation";
 import { format, parseISO, addDays } from "date-fns";
@@ -31,8 +32,17 @@ export const useProjectUSNShift = (
   const router = useRouter();
   const { products: rawProducts } = useProjectUsnProduct();
   const { orders } = useOrderTable();
-  const { locations } = useLocationsList();
-  const { locomotives } = useLocomotiveTable();
+  const { locations, handleFilter } = useLocationsList();
+  const {
+    locomotives: formattedLocomotives,
+    rawLocomotives,
+    isLoading: isLoadingLocomotives,
+    pagination: locomotivePagination,
+    setCurrentPage: setLocomotivePage,
+    handleSearch: handleSearchLocomotives,
+  } = useLocomotiveTable();
+  
+  const [locomotiveSearchTerm, setLocomotiveSearchTerm] = useState<string>("");
   const { company } = useCompany();
   const tPdf = useTranslations("pdf");
 
@@ -121,6 +131,7 @@ export const useProjectUSNShift = (
     Array<{ id: number; document: string }>
   >([]);
   const [removedDocumentIds, setRemovedDocumentIds] = useState<number[]>([]);
+  const [additionalLocations, setAdditionalLocations] = useState<Location[]>([]);
 
   const [errors, setErrors] = useState<ProjectUSNFormErrors>({});
   const [wagons, setWagons] = useState<WagonOption[]>([]);
@@ -151,6 +162,11 @@ export const useProjectUSNShift = (
     nextStatus: "",
     date: "",
   });
+
+  const [locomotiveOptions, setLocomotiveOptions] = useState<LocomotiveOption[]>([]);
+  const lastLocomotivePageRef = useRef<number>(1);
+  const lastLocomotiveSearchRef = useRef<string>("");
+  const lastLocomotiveIdsRef = useRef<string>("");
 
   const handleInputChange = useCallback(
     (field: keyof ProjectUSNFormData, value: any) => {
@@ -315,14 +331,6 @@ export const useProjectUSNShift = (
     []
   );
 
-  useEffect(() => {
-    if(formData.startDate) {
-      setWagonFilters((prev) => ({
-        ...prev,
-        date: formData.startDate,
-      }));
-    }
-  }, [formData.startDate])
 
   const removeRoutePlanningRow = useCallback((rowId: string) => {
     setFormData((prev) => ({
@@ -404,17 +412,27 @@ export const useProjectUSNShift = (
             loc.id.toString() === normalizedStartLocation
         );
 
-        setWagonFilters((prev) => ({
-          ...prev,
+        setWagonFilters({
           location: startLocationEntity
             ? startLocationEntity.id.toString()
             : "",
-        }));
+          status: "",
+          wagonType: "",
+          loadedLocation: "",
+          rail: "",
+          nextStatus: "",
+          date: formData.startDate || "",
+        });
       } else {
-        setWagonFilters((prev) => ({
-          ...prev,
+        setWagonFilters({
           location: "",
-        }));
+          status: "",
+          wagonType: "",
+          loadedLocation: "",
+          rail: "",
+          nextStatus: "",
+          date: formData.startDate || "",
+        });
       }
 
       setSelectedWagonModalType(type);
@@ -422,7 +440,7 @@ export const useProjectUSNShift = (
       setCurrentRowId(rowId);
       setWagonModalOpen(true);
     },
-    [formData.routePlanning, locations]
+    [formData.routePlanning, formData.startDate, locations]
   );
 
   const closeWagonModal = useCallback(() => {
@@ -543,67 +561,72 @@ export const useProjectUSNShift = (
         if (wagonFilters.location) {
           const wagonTypeValues = ["Fac (s)", "Fas", "FACS", "FAS"];
           if (!wagonTypeValues.includes(wagonFilters.location)) {
-            apiFilters.location = wagonFilters.location;
+            apiFilters.location_id = wagonFilters.location;
           }
         }
-        if (wagonFilters?.date && wagonFilters?.date.trim() !== "") {
-          apiFilters.date = wagonFilters.date;
+        if (wagonFilters?.date) {
+          const dateValue = wagonFilters.date as unknown;
+          if (typeof dateValue === "string" && dateValue.trim() !== "") {
+            apiFilters.date = dateValue;
+          } else if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+            apiFilters.date = format(dateValue, "yyyy-MM-dd");
+          }
         }
         if (
           wagonFilters.nextStatus &&
           wagonFilters.nextStatus !== "No Changes"
         ) {
-          apiFilters.nextStatus = wagonFilters.nextStatus;
+          apiFilters.next_status = wagonFilters.nextStatus;
         }
         if (wagonFilters.loadedLocation) {
-          apiFilters.loadedLocation = wagonFilters.loadedLocation;
+          apiFilters.loaded_location = wagonFilters.loadedLocation;
         }
 
-        const response = await WagonService.getAllWagons(
+        const response = await WagonService.getWagonFilters(
           1,
-          50,
-          searchTerm,
+          20,
           apiFilters
         );
+        
         const wagonOptions: WagonOption[] = response.data.data.map(
-          (wagon: any) => {
-            // Get the most recent arrival location from wagon_histories
-            let arrivalLocation: string | undefined;
-            if (wagon.wagon_histories && wagon.wagon_histories.length > 0) {
-              // Find the most recent history entry with arrival_location
-              const historyWithArrival = wagon.wagon_histories
-                .filter((h: any) => h.arrival_location)
-                .sort((a: any, b: any) => 
-                  new Date(b.date).getTime() - new Date(a.date).getTime()
-                )[0];
-              
-              if (historyWithArrival?.arrival_location) {
-                const arrival = historyWithArrival.arrival_location;
-                arrivalLocation = [
-                  arrival.name,
-                  arrival.location,
-                  arrival.type?.replace(/_/g, " ").toLowerCase()
-                ]
-                  .filter(Boolean)
-                  .map((part) => (typeof part === "string" ? part.trim() : part))
-                  .join(" - ");
-              }
-            }
+          (wagonFilter: any) => {
+            const wagon = wagonFilter.wagon || {};
+            const currentLocationObj = wagonFilter.current_location || wagon.location;
+            const arrivalLocationObj = wagonFilter.arrival_location;
+            const plannedCurrentLocationObj = wagonFilter.planned_current_location;
+
+            const formatLoc = (loc: any): string | undefined => {
+              if (!loc) return undefined;
+              if (typeof loc !== "object") return String(loc);
+              const parts = [
+                loc.name,
+                loc.location,
+                loc.type?.replace(/_/g, " ").toLowerCase(),
+              ]
+                .filter(Boolean)
+                .map((part) => (typeof part === "string" ? part.trim() : part));
+              return parts.length > 0 ? parts.join(" - ") : undefined;
+            };
+
+            const currentLocation = formatLoc(currentLocationObj) ?? "Warehouse";
+            const arrivalLocation = formatLoc(arrivalLocationObj);
+            const plannedCurrentLocation = formatLoc(plannedCurrentLocationObj);
 
             return {
-              value: wagon.id.toString(),
-              label: `Wagon ${wagon.wagon_number}`,
-              id: wagon.id,
-              name: `Wagon ${wagon.wagon_number}`,
-              wagonNo: `Wagon ${wagon.wagon_number}`,
-              status: wagon.status || "EMPTY",
-              nextStatus: wagon.next_status || "No Changes",
-              currentLocation: wagon.location || "Warehouse",
-              arrivalLocation: arrivalLocation,
+              value: wagon.id?.toString() || wagonFilter.wagon_id?.toString() || "",
+              label: `Wagon ${wagon.wagon_number || ""}`,
+              id: wagon.id || wagonFilter.wagon_id,
+              name: `Wagon ${wagon.wagon_number || ""}`,
+              wagonNo: `Wagon ${wagon.wagon_number || ""}`,
+              status: wagonFilter.status || wagon.status || "EMPTY",
+              nextStatus: wagonFilter.next_status || wagon.next_status || "No Changes",
+              currentLocation,
+              plannedCurrentLocation,
+              arrivalLocation,
               loadedEmptyLocation: "",
-              typeOfWagon: wagon.wagon_type || "FAS",
-              maxCapacity: `${wagon.maximun_capacity_of_load_weight} Tons`,
-              rail: wagon.rail || "1",
+              typeOfWagon: wagonFilter.wagon_type || wagon.wagon_type || "FAS",
+              maxCapacity: `${wagon.maximun_capacity_of_load_weight || 0} Tons`,
+              rail: wagonFilter.rail || wagon.rail || "1",
               position: wagon.position || "1",
             };
           }
@@ -697,14 +720,12 @@ export const useProjectUSNShift = (
           (role) => !role.isDisabled
         );
 
-        if (activeRoles.length === 0) {
-          newErrors.shiftRole = "At least one personnel role must be active";
-        } else {
+        
           activeRoles.forEach((role) => {
-            if (!role.employee_id || role.employee_id.trim() === "") {
-              (newErrors as any)[`shiftRole[${role.role_id}].employee_id`] =
-                "Employee is required";
-            }
+            // if (!role.employee_id || role.employee_id.trim() === "") {
+            //   (newErrors as any)[`shiftRole[${role.role_id}].employee_id`] =
+            //     "Employee is required";
+            // }
             if (!role.proximity) {
               (newErrors as any)[`shiftRole[${role.role_id}].proximity`] =
                 "Proximity is required";
@@ -715,7 +736,6 @@ export const useProjectUSNShift = (
             }
           });
         }
-      }
     }
 
     if (formData.routePlanningEnabled && formData.routePlanning.length > 0) {
@@ -801,13 +821,49 @@ export const useProjectUSNShift = (
 
   const formatRoutePlanningForSubmit = useCallback(
     (routePlanningData: RoutePlanningRow[]) => {
-      return routePlanningData.map((row) => {
-        const startLocation = locations.find(
-          (loc) => loc.name === row.startLocation
+      return routePlanningData.map((row, index) => {
+        const normalizedStartLocation = row.startLocation?.trim() || "";
+        const normalizedEndLocation = row.arrivalLocation?.trim() || "";
+        
+        let startLocation = locations.find(
+          (loc) => loc.name?.trim().toLowerCase() === normalizedStartLocation.toLowerCase()
         );
-        const endLocation = locations.find(
-          (loc) => loc.name === row.arrivalLocation
+        let endLocation = locations.find(
+          (loc) => loc.name?.trim().toLowerCase() === normalizedEndLocation.toLowerCase()
         );
+
+        if (editMode && existingShift?.usn_shift_route_planning) {
+          const existingRoutePlanning = existingShift.usn_shift_route_planning[index];
+          if (existingRoutePlanning) {
+            if (!startLocation && existingRoutePlanning.start_location_id) {
+              const originalStartLoc = locations.find(
+                (loc) => loc.id === existingRoutePlanning.start_location_id
+              );
+              if (originalStartLoc) {
+                startLocation = originalStartLoc;
+              } else {
+                const startLocationId = existingRoutePlanning.start_location_id;
+                if (startLocationId && startLocationId > 0) {
+                  startLocation = { id: startLocationId, name: normalizedStartLocation } as any;
+                }
+              }
+            }
+            
+            if (!endLocation && existingRoutePlanning.end_location_id) {
+              const originalEndLoc = locations.find(
+                (loc) => loc.id === existingRoutePlanning.end_location_id
+              );
+              if (originalEndLoc) {
+                endLocation = originalEndLoc;
+              } else {
+                const endLocationId = existingRoutePlanning.end_location_id;
+                if (endLocationId && endLocationId > 0) {
+                  endLocation = { id: endLocationId, name: normalizedEndLocation } as any;
+                }
+              }
+            }
+          }
+        }
 
         const firstWagonActions = (row.selectWagon || []).map((wagonId) => ({
           wagon_id: parseInt(wagonId),
@@ -852,7 +908,7 @@ export const useProjectUSNShift = (
         return routeData;
       });
     },
-    [locations]
+    [locations, editMode, existingShift]
   );
 
   const generateRouteLocationPDF = useCallback(
@@ -1023,10 +1079,21 @@ export const useProjectUSNShift = (
           has_route_planning: formData.routePlanningEnabled ? "true" : "false",
           locomotive_id: parseInt(formData.locomotiveId!),
           shiftRole: formData.shiftRole
-            .filter((role) => !role.isDisabled && role.employee_id)
+            .filter((role) => {
+              if (role.isDisabled) return false;
+              
+              const employeeId = role.employee_id;
+              const parsedEmployeeId = employeeId 
+                ? (typeof employeeId === 'string' ? parseInt(employeeId) : employeeId)
+                : null;
+              
+              return parsedEmployeeId && parsedEmployeeId > 0;
+            })
             .map((role) => ({
               role_id: parseInt(role.role_id),
-              employee_id: parseInt(role.employee_id),
+              employee_id: typeof role.employee_id === 'string' 
+                ? parseInt(role.employee_id) 
+                : role.employee_id,
               proximity: role.proximity,
               break_duration: role.break_duration,
               start_day: role.start_day,
@@ -1056,52 +1123,51 @@ export const useProjectUSNShift = (
         ) {
           const updatedRoutePlanning = [...formData.routePlanning];
 
-          for (let i = 0; i < updatedRoutePlanning.length; i++) {
-            let row = updatedRoutePlanning[i];
-            if (!row) continue;
+          // Commented out: Location document generation
+          // for (let i = 0; i < updatedRoutePlanning.length; i++) {
+          //   let row = updatedRoutePlanning[i];
+          //   if (!row) continue;
 
-            // Generate starting location PDF if missing
-            if (!row.starting_location_document) {
-              try {
-                const startPdf = await generateRouteLocationPDF(row, "start");
-                if (startPdf) {
-                  row = {
-                    ...row,
-                    starting_location_document: startPdf,
-                  } as RoutePlanningRow;
-                  updatedRoutePlanning[i] = row;
-                } else {
-                  console.warn(`Failed to generate start PDF for route ${i}`);
-                }
-              } catch (error) {
-                console.error(
-                  `Error generating start PDF for route ${i}:`,
-                  error
-                );
-              }
-            }
+          //   if (!row.starting_location_document) {
+          //     try {
+          //       const startPdf = await generateRouteLocationPDF(row, "start");
+          //       if (startPdf) {
+          //         row = {
+          //           ...row,
+          //           starting_location_document: startPdf,
+          //         } as RoutePlanningRow;
+          //         updatedRoutePlanning[i] = row;
+          //       } else {
+          //         console.warn(`Failed to generate start PDF for route ${i}`);
+          //       }
+          //     } catch (error) {
+          //       console.error(
+          //         `Error generating start PDF for route ${i}:`,
+          //         error
+          //       );
+          //     }
+          //   }
 
-            // Generate ending location PDF if missing
-            if (!row.ending_location_document) {
-              try {
-                const endPdf = await generateRouteLocationPDF(row, "end");
-                if (endPdf) {
-                  row = {
-                    ...row,
-                    ending_location_document: endPdf,
-                  } as RoutePlanningRow;
-                  updatedRoutePlanning[i] = row;
-                } else {
-                  console.warn(`Failed to generate end PDF for route ${i}`);
-                }
-              } catch (error) {
-                console.error(
-                  `Error generating end PDF for route ${i}:`,
-                  error
-                );
-              }
-            }
-          }
+          //   if (!row.ending_location_document) {
+          //     try {
+          //       const endPdf = await generateRouteLocationPDF(row, "end");
+          //       if (endPdf) {
+          //         row = {
+          //           ...row,
+          //           ending_location_document: endPdf,
+          //         } as RoutePlanningRow;
+          //         updatedRoutePlanning[i] = row;
+          //       } else {
+          //         console.warn(`Failed to generate end PDF for route ${i}`);
+          //       }
+          //     } catch (error) {
+          //       console.error(
+          //         `Error generating end PDF for route ${i}:`,
+          //         error
+          //       );
+          //     }
+          //   }
+          // }
 
           setFormData((prev) => ({
             ...prev,
@@ -1126,36 +1192,37 @@ export const useProjectUSNShift = (
             formDataToSend.append("documents", file);
           });
 
-          if (formData.routePlanningEnabled && routePlanningToUse.length > 0) {
-            routePlanningToUse.forEach((row, index) => {
-              if (row.starting_location_document) {
-                const file = blobToFile(
-                  row.starting_location_document,
-                  `starting_location_document_${row.train_no || index}.pdf`
-                );
-                formDataToSend.append("starting_location_document", file);
-                console.log(
-                  `Added starting_location_document for route ${index}`
-                );
-              } else {
-                console.warn(
-                  `No starting_location_document for route ${index}`
-                );
-              }
-              if (row.ending_location_document) {
-                const file = blobToFile(
-                  row.ending_location_document,
-                  `ending_location_document_${row.train_no || index}.pdf`
-                );
-                formDataToSend.append("ending_location_document", file);
-                console.log(
-                  `Added ending_location_document for route ${index}`
-                );
-              } else {
-                console.warn(`No ending_location_document for route ${index}`);
-              }
-            });
-          }
+          // Commented out: Location documents not sent in body (edit mode)
+          // if (formData.routePlanningEnabled && routePlanningToUse.length > 0) {
+          //   routePlanningToUse.forEach((row, index) => {
+          //     if (row.starting_location_document) {
+          //       const file = blobToFile(
+          //         row.starting_location_document,
+          //         `starting_location_document_${row.train_no || index}.pdf`
+          //       );
+          //       formDataToSend.append("starting_location_document", file);
+          //       console.log(
+          //         `Added starting_location_document for route ${index}`
+          //       );
+          //     } else {
+          //       console.warn(
+          //         `No starting_location_document for route ${index}`
+          //       );
+          //     }
+          //     if (row.ending_location_document) {
+          //       const file = blobToFile(
+          //         row.ending_location_document,
+          //         `ending_location_document_${row.train_no || index}.pdf`
+          //       );
+          //       formDataToSend.append("ending_location_document", file);
+          //       console.log(
+          //         `Added ending_location_document for route ${index}`
+          //       );
+          //     } else {
+          //       console.warn(`No ending_location_document for route ${index}`);
+          //     }
+          //   });
+          // }
 
           await ProjectUSNShiftsService.updateProjectUSNShift(
             shiftId,
@@ -1188,36 +1255,37 @@ export const useProjectUSNShift = (
             formDataToSend.append("documents", file);
           });
 
-          if (formData.routePlanningEnabled && routePlanningToUse.length > 0) {
-            routePlanningToUse.forEach((row, index) => {
-              if (row.starting_location_document) {
-                const file = blobToFile(
-                  row.starting_location_document,
-                  `starting_location_document_${row.train_no || index}.pdf`
-                );
-                formDataToSend.append("starting_location_document", file);
-                console.log(
-                  `Added starting_location_document for route ${index}`
-                );
-              } else {
-                console.warn(
-                  `No starting_location_document for route ${index}`
-                );
-              }
-              if (row.ending_location_document) {
-                const file = blobToFile(
-                  row.ending_location_document,
-                  `ending_location_document_${row.train_no || index}.pdf`
-                );
-                formDataToSend.append("ending_location_document", file);
-                console.log(
-                  `Added ending_location_document for route ${index}`
-                );
-              } else {
-                console.warn(`No ending_location_document for route ${index}`);
-              }
-            });
-          }
+          // Commented out: Location documents not sent in body (create mode)
+          // if (formData.routePlanningEnabled && routePlanningToUse.length > 0) {
+          //   routePlanningToUse.forEach((row, index) => {
+          //     if (row.starting_location_document) {
+          //       const file = blobToFile(
+          //         row.starting_location_document,
+          //         `starting_location_document_${row.train_no || index}.pdf`
+          //       );
+          //       formDataToSend.append("starting_location_document", file);
+          //       console.log(
+          //         `Added starting_location_document for route ${index}`
+          //       );
+          //     } else {
+          //       console.warn(
+          //         `No starting_location_document for route ${index}`
+          //       );
+          //     }
+          //     if (row.ending_location_document) {
+          //       const file = blobToFile(
+          //         row.ending_location_document,
+          //         `ending_location_document_${row.train_no || index}.pdf`
+          //       );
+          //       formDataToSend.append("ending_location_document", file);
+          //       console.log(
+          //         `Added ending_location_document for route ${index}`
+          //       );
+          //     } else {
+          //       console.warn(`No ending_location_document for route ${index}`);
+          //     }
+          //   });
+          // }
 
           await ProjectUSNShiftsService.createProjectUSNShift(formDataToSend);
           toast.success(
@@ -1279,12 +1347,71 @@ export const useProjectUSNShift = (
     {} as { [key: string]: string }
   );
 
-  const filteredWarehouseLocations = useMemo(
-    () => locations.filter((loc) => loc.type === "WAREHOUSE"),
-    [locations]
+  useEffect(() => {
+    handleFilter(LocationType.WAREHOUSE);
+  }, [handleFilter]);
+
+  const currentLocomotiveIds = useMemo(
+    () => rawLocomotives.map((loco: any) => loco.id).join(","),
+    [rawLocomotives]
   );
 
+  useEffect(() => {
+    const isSearchChange = lastLocomotiveSearchRef.current !== locomotiveSearchTerm;
+    const isPageIncrement = locomotivePagination.page > lastLocomotivePageRef.current;
+    const isDataChange = lastLocomotiveIdsRef.current !== currentLocomotiveIds;
+    
+    if (isSearchChange) {
+      lastLocomotiveSearchRef.current = locomotiveSearchTerm;
+      lastLocomotivePageRef.current = 1;
+      lastLocomotiveIdsRef.current = "";
+      setLocomotiveOptions([]);
+      return;
+    }
+    
+    if (!rawLocomotives || rawLocomotives.length === 0 || !isDataChange) {
+      return;
+    }
+    
+    const mapped: LocomotiveOption[] = rawLocomotives
+      .filter((locomotive: any) => locomotive.id !== undefined)
+      .map((locomotive: any) => ({
+        value: locomotive.id!.toString(),
+        label: locomotive.name,
+        id: locomotive.id as number,
+        name: locomotive.name,
+      }));
 
+    setLocomotiveOptions((prev) => {
+      const shouldAppend = isPageIncrement && locomotivePagination.page > 1;
+      
+      if (shouldAppend) {
+        const existingIds = new Set(prev.map((loco) => loco.id));
+        const newOnes = mapped.filter((loco) => !existingIds.has(loco.id));
+        lastLocomotivePageRef.current = locomotivePagination.page;
+        lastLocomotiveIdsRef.current = currentLocomotiveIds;
+        return [...prev, ...newOnes];
+      }
+      
+      lastLocomotivePageRef.current = locomotivePagination.page;
+      lastLocomotiveIdsRef.current = currentLocomotiveIds;
+      return mapped;
+    });
+  }, [locomotivePagination.page, locomotiveSearchTerm, currentLocomotiveIds]);
+
+  const hasMoreLocomotives =
+    locomotivePagination.page < locomotivePagination.total_pages;
+
+  const handleLoadMoreLocomotives = useCallback(() => {
+    if (hasMoreLocomotives && !isLoadingLocomotives) {
+      setLocomotivePage(locomotivePagination.page + 1);
+    }
+  }, [hasMoreLocomotives, isLoadingLocomotives, setLocomotivePage, locomotivePagination.page]);
+
+  const handleLocomotiveSearch = useCallback((searchTerm: string) => {
+    setLocomotiveSearchTerm(searchTerm);
+    handleSearchLocomotives(searchTerm);
+  }, [handleSearchLocomotives]);
 
   useEffect(() => {
     if (editMode && existingShift && !isInitialized && products.length > 0) {
@@ -1309,18 +1436,27 @@ export const useProjectUSNShift = (
         }
       };
 
-      const shiftRoles =
-        existingShift.usn_shift_roles?.map((role: any) => ({
-          role_id: role.role_id.toString(),
-          employee_id:
-            role.usn_shift_personnels?.[0]?.employee_id?.toString() || "",
-          proximity: role.proximity || "NEARBY",
-          break_duration: role.break_duration || "0",
-          start_day: role.start_day || "NO",
-          isDisabled: false,
-        })) || [];
 
-      const parseRoutePlanning = () => {
+      const shiftRoles =
+        existingShift.usn_shift_roles?.map((role: any) => {
+          const firstPersonnel = role.usn_shift_personnels?.find(
+            (personnel: any) => personnel?.employee_id
+          );
+          const employeeId = firstPersonnel?.employee_id?.toString() || "";
+
+          return {
+            role_id: role.role_id.toString(),
+            employee_id: employeeId,
+            proximity: role.proximity || "NEARBY",
+            break_duration: role.break_duration || "0",
+            start_day: role.start_day || "NO",
+            isDisabled: false,
+          };
+        }) || [];
+
+        console.log(shiftRoles,'shiftRoles')
+
+      const parseRoutePlanning = async () => {
         if (!existingShift.has_route_planning) {
           return [
             {
@@ -1343,14 +1479,66 @@ export const useProjectUSNShift = (
           existingShift.usn_shift_route_planning ||
           existingShift.usn_shift_route_plannings;
 
+          console.log(routePlanningData,"routePlanningData");
+
         if (routePlanningData && routePlanningData.length > 0) {
+          const locationIds = new Set<number>();
+          routePlanningData.forEach((rp: any) => {
+            if (rp.start_location_id) locationIds.add(rp.start_location_id);
+            if (rp.end_location_id) locationIds.add(rp.end_location_id);
+          });
+
+          const locationMap = new Map<number, Location>();
+          
+          locations.forEach((loc: any) => {
+            const locationId = loc.id;
+            if (locationId && locationIds.has(locationId)) {
+              locationMap.set(locationId, loc as Location);
+            }
+          });
+
+          const missingLocationIds = Array.from(locationIds).filter(
+            (id) => !locationMap.has(id)
+          );
+
+          if (missingLocationIds.length > 0) {
+            try {
+              const locationPromises = missingLocationIds.map((id) =>
+                LocationService.getLocationById(id)
+                  .then((response) => {
+                    const location = response.data?.data || response.data;
+                    return location;
+                  })
+                  .catch((error) => {
+                    console.error(`Failed to fetch location ${id}:`, error);
+                    return null;
+                  })
+              );
+
+              const fetchedLocations = await Promise.all(locationPromises);
+              const validLocations: Location[] = [];
+              fetchedLocations.forEach((loc) => {
+                if (loc) {
+                  locationMap.set(loc.id, loc);
+                  validLocations.push(loc);
+                }
+              });
+              
+              if (validLocations.length > 0) {
+                setAdditionalLocations((prev) => {
+                  const existingIds = new Set(prev.map(l => l.id));
+                  const newLocations = validLocations.filter(l => !existingIds.has(l.id));
+                  return [...prev, ...newLocations];
+                });
+              }
+            } catch (error) {
+              console.error("Error fetching locations:", error);
+            }
+          }
+
           return routePlanningData.map((rp: any, index: number) => {
-            const startLocation = locations.find(
-              (loc) => loc.id === rp.start_location_id
-            );
-            const endLocation = locations.find(
-              (loc) => loc.id === rp.end_location_id
-            );
+            const startLocation = locationMap.get(rp.start_location_id);
+            const endLocation = locationMap.get(rp.end_location_id);
 
             const firstWagonIds =
               (rp.usn_shift_first_wagon_action || rp.first_wagon_action)?.map(
@@ -1373,6 +1561,16 @@ export const useProjectUSNShift = (
               );
             };
 
+            const startingLocationDoc = 
+              rp.route_planning_starting_location_documents?.[0]?.document ||
+              rp.usn_shift_route_planning_starting_location_documents?.[0]?.document ||
+              null;
+
+            const endingLocationDoc = 
+              rp.route_planning_ending_location_documents?.[0]?.document ||
+              rp.usn_shift_route_planning_ending_location_documents?.[0]?.document ||
+              null;
+
             return {
               id: (index + 1).toString(),
               startLocation: startLocation?.name || "",
@@ -1386,6 +1584,8 @@ export const useProjectUSNShift = (
               currentShiftProject: [],
               countingLocation: "",
               endingLocation: "",
+              starting_location_document_url: startingLocationDoc || undefined,
+              ending_location_document_url: endingLocationDoc || undefined,
             };
           });
         }
@@ -1417,7 +1617,6 @@ export const useProjectUSNShift = (
         return "";
       };
 
-      // Get warehouse location ID
       const getWarehouseLocationId = () => {
         if (existingShift.warehouse_location_id) {
           return existingShift.warehouse_location_id.toString();
@@ -1431,22 +1630,58 @@ export const useProjectUSNShift = (
         return "";
       };
 
-      setFormData({
-        startDate: formatDate(existingShift.date) || "",
-        endDate: formatDate(existingShift.date) || "",
-        startTime: formatTime(existingShift.start_time) || "",
-        endTime: formatTime(existingShift.end_time) || "",
-        productId: existingShift.product_usn_id.toString(),
-        warehouseLocation: getWarehouseLocationId(),
-        routePlanningEnabled: existingShift.has_route_planning || false,
-        routePlanning: parseRoutePlanning(),
-        showDetails: true,
-        shiftRole: shiftRoles,
-        documents: [],
-        locomotiveId: getLocomotiveId(),
-        hasNote: existingShift.has_note || false,
-        note: existingShift.note || "",
-      });
+      parseRoutePlanning()
+        .then((parsedRoutePlanning) => {
+          setFormData({
+            startDate: formatDate(existingShift.date) || "",
+            endDate: formatDate(existingShift.date) || "",
+            startTime: formatTime(existingShift.start_time) || "",
+            endTime: formatTime(existingShift.end_time) || "",
+            productId: existingShift.product_usn_id.toString(),
+            warehouseLocation: getWarehouseLocationId(),
+            routePlanningEnabled: existingShift.has_route_planning || false,
+            routePlanning: parsedRoutePlanning,
+            showDetails: true,
+            shiftRole: shiftRoles,
+            documents: [],
+            locomotiveId: getLocomotiveId(),
+            hasNote: existingShift.has_note || false,
+            note: existingShift.note || "",
+          });
+        })
+        .catch((error) => {
+          console.error("Error parsing route planning:", error);
+          setFormData({
+            startDate: formatDate(existingShift.date) || "",
+            endDate: formatDate(existingShift.date) || "",
+            startTime: formatTime(existingShift.start_time) || "",
+            endTime: formatTime(existingShift.end_time) || "",
+            productId: existingShift.product_usn_id.toString(),
+            warehouseLocation: getWarehouseLocationId(),
+            routePlanningEnabled: existingShift.has_route_planning || false,
+            routePlanning: [
+              {
+                id: "1",
+                startLocation: "",
+                selectWagon: [],
+                selectSecondWagon: [],
+                selectPurpose: "",
+                orders: [],
+                arrivalLocation: "",
+                currentShiftProject: [],
+                countingLocation: "",
+                endingLocation: "",
+                pickup_date: "",
+              },
+            ],
+            showDetails: true,
+            shiftRole: shiftRoles,
+            documents: [],
+            locomotiveId: getLocomotiveId(),
+            hasNote: existingShift.has_note || false,
+            note: existingShift.note || "",
+          });
+        });
 
       const product = products.find(
         (p) => p.id?.toString() === existingShift.product_usn_id.toString()
@@ -1468,14 +1703,64 @@ export const useProjectUSNShift = (
     }
   }, [editMode, existingShift, products, isInitialized, locations]);
 
-  const locomotiveOptions: LocomotiveOption[] = locomotives
-    .filter((locomotive) => locomotive.id !== undefined)
-    .map((locomotive) => ({
-      value: locomotive.id!.toString(),
-      label: locomotive.name,
-      id: locomotive.id as number,
-      name: locomotive.name,
-    }));
+  useEffect(() => {
+    if (editMode && isInitialized && additionalLocations.length > 0 && formData.routePlanning.length > 0) {
+      const routePlanningData =
+        existingShift?.usn_shift_route_planning ||
+        existingShift?.usn_shift_route_plannings;
+
+      if (routePlanningData && routePlanningData.length > 0) {
+        const updatedRoutePlanning = formData.routePlanning.map((row, index) => {
+          const rp = routePlanningData[index];
+          if (!rp) return row;
+
+          const allLocationsMap = new Map<number, Location>();
+          locations.forEach((loc) => allLocationsMap.set(loc.id, loc));
+          additionalLocations.forEach((loc) => allLocationsMap.set(loc.id, loc));
+
+          const startLocation = allLocationsMap.get(rp.start_location_id);
+          const endLocation = allLocationsMap.get(rp.end_location_id);
+
+          return {
+            ...row,
+            startLocation: startLocation?.name || row.startLocation,
+            arrivalLocation: endLocation?.name || row.arrivalLocation,
+          };
+        });
+
+        const hasChanges = updatedRoutePlanning.some((updated, index) => {
+          const original = formData.routePlanning[index];
+          if (!original) return false;
+          const startChanged = updated.startLocation !== original.startLocation;
+          const arrivalChanged = updated.arrivalLocation !== original.arrivalLocation;
+          return startChanged || arrivalChanged;
+        });
+
+        if (hasChanges) {
+          setFormData((prev) => ({
+            ...prev,
+            routePlanning: updatedRoutePlanning,
+          }));
+        }
+      }
+    }
+  }, [additionalLocations, editMode, isInitialized, locations, existingShift]);
+
+  const mergedLocations = useMemo(() => {
+    const locationMap = new Map<number, Location>();
+    
+    locations.forEach((loc) => {
+      locationMap.set(loc.id, loc);
+    });
+    
+    additionalLocations.forEach((loc) => {
+      if (!locationMap.has(loc.id)) {
+        locationMap.set(loc.id, loc);
+      }
+    });
+    
+    return Array.from(locationMap.values());
+  }, [locations, additionalLocations]);
 
   return {
     formData,
@@ -1511,11 +1796,15 @@ export const useProjectUSNShift = (
     handleSubmit,
     resetForm,
     orders,
-    locations,
+    locations: mergedLocations,
     getCurrentRowWagons,
     handleProductSearch,
     personalDetailErrors,
-    warehouseLocations: filteredWarehouseLocations,
+    warehouseLocations: mergedLocations,
     formatRoutePlanningForSubmit,
+    hasMoreLocomotives,
+    handleLoadMoreLocomotives,
+    handleSearchLocomotives: handleLocomotiveSearch,
+    isLoadingLocomotives,
   };
 };

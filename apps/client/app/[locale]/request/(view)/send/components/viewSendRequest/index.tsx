@@ -9,6 +9,7 @@ import SendRequestDialog from "../SendRequestDialog";
 import { useSendRequestForm } from "@/hooks/sendRequest/useSendRequestHook";
 import { useCompany } from "@/providers/appProvider";
 import { SendRequest } from "@/types/request";
+import { getImagePath } from "@/utils/imagePath";
 
 const ViewSendRequest = () => {
   const tActions = useTranslations("actions");
@@ -85,7 +86,7 @@ const ViewSendRequest = () => {
           text={tActions("send") + " " + tActions("request")}
           startIcon={
             <Image
-              src="/images/projects.svg"
+              src={getImagePath("/images/projects.svg")}
               alt="Add Bv Project"
               width={16}
               height={16}

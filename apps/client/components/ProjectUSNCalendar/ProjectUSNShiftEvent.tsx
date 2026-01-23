@@ -13,12 +13,13 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
-import { useRoleEmployees } from "@/hooks/employee/useRoleEmployees";
 import { useLocomotiveTable } from "@/hooks/locomotive/useLocomotiveTable";
+import { ProjectUSNRoleSelect } from "./ProjectUSNRoleSelect";
 import { useConfirmation } from "@/providers/ConfirmationProvider";
 import ProjectUSNShiftsService from "@/services/projectUsnShift";
 import { toast } from "sonner";
-import { useAuth } from "@/providers/appProvider";
+import { useAuth, useCompany } from "@/providers/appProvider";
+import { useProjectUsnProduct } from "@/hooks/projectUsnProduct/useProjectUsnProduct";
 
 interface ProjectUSNShiftEventProps {
   shift: ProjectUSNShift;
@@ -52,6 +53,8 @@ export function ProjectUSNShiftEvent({
   const { showConfirmation } = useConfirmation();
   const { locomotives: allLocomotives } = useLocomotiveTable();
   const { isEmployee } = useAuth();
+  const { products: rawProducts } = useProjectUsnProduct();
+  const { company } = useCompany();
 
   const handleEmployeeChange = async (
     employeeId: string,
@@ -107,29 +110,52 @@ export function ProjectUSNShiftEvent({
         has_route_planning: fullShiftData.has_route_planning ? "true" : "false",
       };
 
-      if (
-        fullShiftData.usn_shift_roles &&
-        fullShiftData.usn_shift_roles.length > 0
-      ) {
-        updatePayload.shiftRole = fullShiftData.usn_shift_roles.map(
-          (role: any) => {
-            const currentEmployeeId =
-              role.role_id.toString() === roleId
-                ? Number(employeeId)
-                : role.usn_shift_personnels?.[0]?.employee_id || role.role_id;
+      // Get product to access all roles
+      const product = rawProducts.find(
+        (p) => p.id?.toString() === fullShiftData.product_usn_id?.toString()
+      );
+      const allProductRoles = product?.product_usn_personnel_roles || [];
 
-            return {
-              role_id: role.role_id,
-              employee_id: currentEmployeeId,
-              proximity: role.proximity,
-              break_duration: role.break_duration,
-              start_day: role.start_day,
-            };
-          }
-        );
-      } else {
-        updatePayload.shiftRole = [];
+      // Create a map of existing shift roles by role_id
+      const existingRolesMap = new Map();
+      if (fullShiftData.usn_shift_roles && fullShiftData.usn_shift_roles.length > 0) {
+        fullShiftData.usn_shift_roles.forEach((role: any) => {
+          existingRolesMap.set(role.role_id, role);
+        });
       }
+
+      // Build shiftRole array from all product roles
+      updatePayload.shiftRole = allProductRoles
+        .map((productRole: any) => {
+          const productRoleId = productRole.personnel?.role_id;
+          const existingRole = existingRolesMap.get(productRoleId);
+          
+          let currentEmployeeId: number | null;
+          if (productRoleId.toString() === roleId) {
+            // This is the role being updated
+            const parsedId = employeeId ? Number(employeeId) : null;
+            currentEmployeeId = parsedId && parsedId > 0 ? parsedId : null;
+          } else if (existingRole) {
+            // Use existing employee from shift
+            const existingEmployeeId = existingRole.usn_shift_personnels?.[0]?.employee_id;
+            currentEmployeeId = existingEmployeeId && existingEmployeeId > 0 ? existingEmployeeId : null;
+          } else {
+            // New role, no employee yet
+            currentEmployeeId = null;
+          }
+
+          return {
+            role_id: productRoleId,
+            employee_id: currentEmployeeId,
+            proximity: existingRole?.proximity || "NEARBY",
+            break_duration: existingRole?.break_duration || "0",
+            start_day: existingRole?.start_day || "NO",
+          };
+        })
+        .filter((role: any) => {
+          // Only include roles with valid employee_id (greater than 0)
+          return role.employee_id && role.employee_id > 0;
+        });
 
       if (fullShiftData.locomotive_id) {
         updatePayload.locomotive_id = fullShiftData.locomotive_id;
@@ -214,14 +240,16 @@ export function ProjectUSNShiftEvent({
             role.role_id.toString() === roleId
               ? {
                   ...role,
-                  usn_shift_personnels: [
-                    {
-                      id: Date.now(),
-                      usn_shift_role_id: role.id,
-                      employee_id: Number(employeeId),
-                      employee: { id: Number(employeeId) },
-                    },
-                  ],
+                  usn_shift_personnels: employeeId && Number(employeeId) > 0
+                    ? [
+                        {
+                          id: Date.now(),
+                          usn_shift_role_id: role.id,
+                          employee_id: Number(employeeId),
+                          employee: { id: Number(employeeId) },
+                        },
+                      ]
+                    : [], // Remove personnel if employee is unselected
                 }
               : role
           ) || [],
@@ -395,91 +423,66 @@ export function ProjectUSNShiftEvent({
   };
 
   const renderRoleSelects = () => {
-    return shift?.usn_shift_roles?.map((role) => {
-      const {
-        employees: availableEmployees,
-        isLoading,
-        pagination,
-        handleSearch,
-        handleLoadMore,
-        initialize,
-      } = useRoleEmployees(
-        role.role_id.toString(),
-        role.usn_shift_personnels?.[0]?.employee
+    // Get the product for this shift to access all roles
+    const product = rawProducts.find(
+      (p) => p.id?.toString() === shift.product_usn_id?.toString()
+    );
+
+    // Get all roles from the product
+    const allProductRoles = product?.product_usn_personnel_roles || [];
+    
+    // Create a map of existing shift roles by role_id for quick lookup
+    const existingRolesMap = new Map();
+    shift?.usn_shift_roles?.forEach((role) => {
+      existingRolesMap.set(role.role_id, role);
+    });
+
+    // Render all product roles, creating placeholder roles for ones that don't exist in the shift
+    return allProductRoles.map((productRole: any) => {
+      const roleId = productRole.personnel?.role_id;
+      const existingRole = existingRolesMap.get(roleId);
+      
+      // Get role info from company roles
+      const roleFromCompany = company?.roles?.find(
+        (r: any) => r.id === roleId
       );
 
-      let employeeList = [...availableEmployees];
-
-      if (role.usn_shift_personnels?.[0]?.employee) {
-        const employeeExists = employeeList.some(
-          (emp) =>
-            emp.id?.toString() ===
-            role.usn_shift_personnels[0].employee?.id?.toString()
-        );
-        if (!employeeExists) {
-          employeeList = [
-            role.usn_shift_personnels[0].employee,
-            ...employeeList,
-          ];
-        }
-      }
-
-      const employeeName = role.usn_shift_personnels?.[0]?.employee_id
-        ? `Employee #${role.usn_shift_personnels[0].employee_id}`
-        : "Select employee";
-
-      return (
-        <div
-          key={role.id}
-          className="flex items-center justify-start mt-1 overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <CheckCircle
-            size={14}
-            className={cn(
-              "mr-1",
-              role.usn_shift_personnels?.[0]?.employee_id
-                ? "text-green-600"
-                : "text-gray-400"
-            )}
+      // If role exists in shift, use it; otherwise create a placeholder
+      if (existingRole) {
+        return (
+          <ProjectUSNRoleSelect
+            key={existingRole.id}
+            role={existingRole}
+            shift={shift}
+            onEmployeeChange={handleEmployeeChange}
           />
+        );
+      } else {
+        // Create a placeholder role object for roles that don't exist in the shift yet
+        const placeholderRole = {
+          id: `placeholder-${roleId}`,
+          usn_shift_id: shift.id,
+          role_id: roleId,
+          proximity: "NEARBY" as const,
+          break_duration: "0",
+          start_day: "NO" as const,
+          usn_shift_personnels: [],
+          role: {
+            id: roleId,
+            name: roleFromCompany?.name || `Role ${roleId}`,
+            short_name: (roleFromCompany as any)?.short_name || (roleFromCompany?.name?.substring(0, 3).toUpperCase() || `R${roleId}`),
+          },
+        };
 
-          <span
-            className={cn(
-              "flex items-center flex-shrink-0 mr-1",
-              !role.usn_shift_personnels?.[0]?.employee_id && "text-red-500"
-            )}
-            title={role.role?.short_name || ""}
-          >
-            {role.role?.short_name || ""}:
-          </span>
-
-          <div title={employeeName}>
-            <SMSCombobox
-              label=""
-              placeholder="Select Emp"
-              searchPlaceholder="Search employee..."
-              value={
-                role.usn_shift_personnels?.[0]?.employee_id?.toString() || ""
-              }
-              onValueChange={(value) =>
-                handleEmployeeChange(value, role.role_id.toString(), shift)
-              }
-              options={employeeList.map((employee) => ({
-                value: employee.id?.toString() || "",
-                label: employee.name || `Emp #${employee.id}`,
-              }))}
-              required
-              hasMore={pagination.page < pagination.total_pages}
-              loadingMore={isLoading}
-              onLoadMore={handleLoadMore}
-              onSearch={handleSearch}
-              onOpen={initialize}
-              className="w-fit h-2 min-h-3 m-0 text-[10px] bg-transparent border-none rounded-sm py-0 flex items-center hover:bg-transparent whitespace-nowrap overflow-hidden text-ellipsis px-0"
-            />
-          </div>
-        </div>
-      );
+        return (
+          <ProjectUSNRoleSelect
+            key={placeholderRole.id}
+            role={placeholderRole}
+            shift={shift}
+            onEmployeeChange={handleEmployeeChange}
+          />
+        );
+      }
     });
   };
 
