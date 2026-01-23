@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && npx -y pnpm@10.5.2 build --filter=./apps/client",
+  "buildCommand": "cd ../.. && npx turbo build --filter=client",
   "installCommand": "cd ../.. && npx -y pnpm@10.5.2 install --frozen-lockfile",
   "outputDirectory": ".next",
   "framework": "nextjs"
