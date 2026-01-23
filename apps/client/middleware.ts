@@ -8,16 +8,22 @@ const intlMiddleware = createMiddleware({
 });
 
 export default function middleware(request: NextRequest) {
-  // Enforce HTTPS in production (Vercel automatically provides HTTPS, but we enforce redirect)
-  if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") {
-    const proto = request.headers.get("x-forwarded-proto");
-    if (proto === "http") {
-      const url = request.nextUrl.clone();
-      url.protocol = "https:";
-      return NextResponse.redirect(url, 301);
+  // Enforce HTTPS redirect in production (Vercel)
+  // Based on Next.js best practices: check x-forwarded-proto header
+  // Vercel automatically provides HTTPS, but we ensure HTTP requests are redirected
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
+    const forwardedProto = request.headers.get("x-forwarded-proto");
+    const host = request.headers.get("host");
+    
+    // If protocol is HTTP, redirect to HTTPS using proper URL construction
+    // Use host header to avoid issues with URL parsing
+    if (forwardedProto === "http" && host) {
+      const httpsUrl = `https://${host}${request.nextUrl.pathname}${request.nextUrl.search}`;
+      return NextResponse.redirect(httpsUrl, 301);
     }
   }
 
+  // Apply internationalization middleware
   return intlMiddleware(request);
 }
 
