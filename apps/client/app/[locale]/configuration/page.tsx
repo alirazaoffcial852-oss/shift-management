@@ -16,6 +16,7 @@ const Configuration = () => {
     handleAddCompanies,
     permissions,
   } = useConfigurationForm();
+  
 
   return (
     <ConfigurationLayout
