@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && npx -y pnpm@10.5.2 build --filter=admin",
+  "buildCommand": "cd ../.. && npx -y pnpm@10.5.2 build --filter=./apps/admin",
   "installCommand": "cd ../.. && npx -y pnpm@10.5.2 install --frozen-lockfile",
   "outputDirectory": ".next",
   "framework": "nextjs"
