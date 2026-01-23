@@ -72,7 +72,7 @@ export const validateProductForm = (
   if (currentStep === 4) {
     if (
       product.has_flat_price &&
-      (product.flat_price === undefined || product.flat_price <= 0)
+      (product.flat_price === undefined || product.flat_price < 0)
     ) {
       errors.flat_price = "Flat price is required when flat price is enabled";
     }

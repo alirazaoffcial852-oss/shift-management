@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import CustomerService from "@/services/customer";
 import { useCompany } from "@/providers/appProvider";
 import { STATUS } from "@/types/shared/global";
@@ -8,6 +8,7 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
   const { company } = useCompany();
   const [tabValue, setTabValue] = useState<STATUS>("ACTIVE");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
   const [timeFilter, setTimeFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState<any>(null);
   const [customers, setCustomers] = useState<any[]>([]);
@@ -19,6 +20,7 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
     total_pages: 0,
   });
   const [error, setError] = useState<string | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchCustomers = useCallback(
     async (page = 1, searchTermParam = "") => {
@@ -58,9 +60,28 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
     [company, pagination.limit, tabValue]
   );
 
+  // Debounce effect for search term
   useEffect(() => {
-    fetchCustomers(pagination.page, searchTerm);
-  }, [pagination.page, searchTerm, fetchCustomers]);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+    }, 500);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchTerm]);
+
+  // Fetch when debounced search term or page changes
+  useEffect(() => {
+    fetchCustomers(pagination.page, debouncedSearchTerm);
+  }, [pagination.page, debouncedSearchTerm, fetchCustomers]);
 
   const handleLoadMoreCustomers = useCallback(() => {
     if (pagination.page < pagination.total_pages) {
@@ -70,7 +91,6 @@ export const useCustomerTable = (initialPage = 1, limit = 20) => {
 
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
-    setPagination((prev) => ({ ...prev, page: 1 }));
   }, []);
 
   const handleTabChange = useCallback((val: STATUS) => {

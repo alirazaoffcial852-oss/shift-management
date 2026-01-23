@@ -123,6 +123,7 @@ const ViewProduct = () => {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
         onSearchChange={handleSearch}
+        search={true}
         isLoading={isLoading}
         actionsHeader={tProduct("actions")}
       />

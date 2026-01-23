@@ -43,10 +43,10 @@ export const validateShiftForm = (
         );
         const endDateTime = new Date(`${shift.end_date}T${shift.end_time}`);
 
-        if (startDateTime >= endDateTime) {
-          errors[`shifts[${index}].end_time`] =
-            "End date/time must be after start date/time";
-        }
+        // if (startDateTime >= endDateTime) {
+        //   errors[`shifts[${index}].end_time`] =
+        //     "End date/time must be after start date/time";
+        // }
       }
     });
   }
@@ -82,15 +82,15 @@ export const validateShiftForm = (
         const activeRoles = shift.shiftRole.filter(
           (role) => role.isDisabled !== true
         );
-        if (activeRoles.length === 0) {
-          errors[`${prefix}shiftRole`] = "At least one role must be active";
-        }
+        // if (activeRoles.length === 0) {
+        //   errors[`${prefix}shiftRole`] = "At least one role must be active";
+        // }
 
         shift.shiftRole.forEach((role, roleIndex) => {
-          if (!role.employee_id && role.isDisabled !== true && isEdit) {
-            errors[`${prefix}shiftRole[${role?.role_id}].employee_id`] =
-              "Employee is required";
-          }
+          // if (!role.employee_id && role.isDisabled !== true && isEdit) {
+          //   errors[`${prefix}shiftRole[${role?.role_id}].employee_id`] =
+          //     "Employee is required";
+          // }
           if (!role.role_id && role.isDisabled !== true && isEdit) {
             errors[`${prefix}shiftRole[${role?.role_id}].role_id`] =
               "Role is required";

@@ -240,7 +240,7 @@ export default function WegonHistoryPage() {
     searchTerm;
 
   return (
-    <div className="px-6 py-8 max-w-7xl mx-auto">
+    <div className="px-6 py-8 max-w-[90rem] mx-auto">
       <h1 className="text-4xl font-medium mb-6">{t("wagonsHistory")}</h1>
       <div className="bg-white rounded-lg shadow-lg p-6">
         <div className=" mb-6">
@@ -407,6 +407,14 @@ export default function WegonHistoryPage() {
                                 {t("currentLocation")}{" "}
                                 <span className="font-medium">
                                   {historyItem.current_location?.name ||
+                                    t("na")}
+                                </span>
+                              </span>
+
+                              <span className="text-sm text-gray-600 flex-1">
+                                {t("plannedCurrentLocation")}{" "}
+                                <span className="font-medium">
+                                  {historyItem.planned_current_location?.name ||
                                     t("na")}
                                 </span>
                               </span>

@@ -18,7 +18,7 @@ import { useCostCenterTable } from "@/hooks/costCenter/useCostCenterTable";
 import { useTypeOfOperationTable } from "@/hooks/typeOfOperation/useTypeOfOperationTable";
 import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
 import { useBvProjectForm } from "@/hooks/bvProject/useBvProjectForm";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { AddProjectDialog } from "@/components/Dialog/AddProjectDialog";
 import { useProjectForm } from "@/hooks/project/useProjectForm";
 import { AddCustomerDialog } from "@/components/Dialog/AddCustomerDialog";
@@ -59,6 +59,7 @@ export function BasicDetail({
   const {
     products,
     isLoading: isLoadingProducts,
+    isLoadingMore: isLoadingMoreProducts,
     handleLoadMore,
     totalPages,
     handleSearch: fetchProductsWithSearch,
@@ -209,19 +210,99 @@ export function BasicDetail({
     }
   };
 
-  const selectedCustomer = customers?.find(
-    (customer) => customer.id?.toString() === shifts.customer_id?.toString()
-  );
+  const customersWithSelected = useMemo(() => {
+    const list = customers || [];
+    const currentId = shifts.customer_id?.toString();
+
+    if (!currentId || !shifts.customer) {
+      return list;
+    }
+
+    const alreadyExists = list.some(
+      (customer: any) => customer.id?.toString() === currentId
+    );
+
+    if (alreadyExists) {
+      return list;
+    }
+
+    return [shifts.customer, ...list];
+  }, [customers, shifts.customer, shifts.customer_id]);
+
+  const selectedCustomer = useMemo(() => {
+    const found = customersWithSelected?.find(
+      (customer: any) => customer.id?.toString() === shifts.customer_id?.toString()
+    );
+    return found || (shifts.customer_id && shifts.customer ? shifts.customer : undefined);
+  }, [customersWithSelected, shifts.customer_id, shifts.customer]);
+
   const customerProducts = selectedCustomer?.products || [];
   const customerProjects = selectedCustomer?.projects || [];
 
-  const filteredProducts = shifts.customer_id
-    ? customerProducts.filter((product: any) => product.show_in_dropdown)
-    : products;
+  const projectsWithSelected = useMemo(() => {
+    const list = shifts.customer_id
+      ? customerProjects.filter((project: any) => project.status === "ACTIVE")
+      : projects || [];
+    const currentId = shifts.project_id?.toString();
 
-  const filteredProjects = shifts.customer_id
-    ? customerProjects.filter((project: any) => project.status === "ACTIVE")
-    : projects;
+    if (!currentId || !shifts.project) {
+      return list;
+    }
+
+    const alreadyExists = list.some(
+      (project: any) => project.id?.toString() === currentId
+    );
+
+    if (alreadyExists) {
+      return list;
+    }
+
+    return [shifts.project, ...list];
+  }, [shifts.customer_id, customerProjects, projects, shifts.project_id, shifts.project]);
+
+  const productsWithSelected = useMemo(() => {
+    const list = shifts.customer_id
+      ? customerProducts.filter((product: any) => product.show_in_dropdown)
+      : products || [];
+    const currentId = shifts.product_id?.toString();
+
+    if (!currentId || !shifts.product) {
+      return list;
+    }
+
+    const alreadyExists = list.some(
+      (product: any) => product.id?.toString() === currentId
+    );
+
+    if (alreadyExists) {
+      return list;
+    }
+
+    return [shifts.product, ...list];
+  }, [shifts.customer_id, customerProducts, products, shifts.product_id, shifts.product]);
+
+  const bvProjectsWithSelected = useMemo(() => {
+    const list = bvProjects || [];
+    const currentId = shifts.bv_project_id?.toString();
+
+    if (!currentId || !shifts.bv_project) {
+      return list;
+    }
+
+    const alreadyExists = list.some(
+      (bvProject: any) => bvProject.id?.toString() === currentId
+    );
+
+    if (alreadyExists) {
+      return list;
+    }
+
+    return [shifts.bv_project, ...list];
+  }, [bvProjects, shifts.bv_project_id, shifts.bv_project]);
+
+  const filteredProducts = productsWithSelected;
+  const filteredProjects = projectsWithSelected;
+
 
   let hasLocomotive = company?.configuration?.has_locomotive;
 
@@ -236,7 +317,7 @@ export function BasicDetail({
             searchPlaceholder={t("searchCustomers")}
             value={shifts.customer_id?.toString() || ""}
             onValueChange={handleCustomerSelect}
-            options={customers.map((customer: any) => ({
+            options={customersWithSelected.map((customer: any) => ({
               value: customer.id?.toString() || "",
               label: customer.name,
             }))}
@@ -284,7 +365,7 @@ export function BasicDetail({
             searchPlaceholder={t("searchBvProjects")}
             value={shifts.bv_project_id}
             onValueChange={(value) => handleChange("bv_project_id", value)}
-            options={bvProjects.map((bvProject) => ({
+            options={bvProjectsWithSelected.map((bvProject: any) => ({
               value: bvProject.id?.toString() || "",
               label: bvProject.name,
             }))}
@@ -393,7 +474,7 @@ export function BasicDetail({
             hasMore={
               shifts.customer_id ? false : productsPagination.page < totalPages
             }
-            loadingMore={shifts.customer_id ? false : isLoadingProducts}
+            loadingMore={shifts.customer_id ? false : isLoadingMoreProducts}
             onLoadMore={shifts.customer_id ? undefined : handleLoadMore}
             onSearch={shifts.customer_id ? undefined : fetchProductsWithSearch}
           />

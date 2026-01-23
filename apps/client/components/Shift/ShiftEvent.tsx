@@ -27,8 +27,8 @@ import { updateShiftData } from "@/utils/shiftUpdate";
 import { AssignShift } from "../Dialog/ShiftAssignDialog";
 import { Product } from "@/types/product";
 import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
-import { useRoleEmployees } from "@/hooks/employee/useRoleEmployees";
 import { useStatusIdentifiers } from "@/hooks/shiftStatusList";
+import { RoleSelect } from "./RoleSelect";
 import { useAuth } from "@/providers/appProvider";
 import { Locomotive } from "@/types/locomotive";
 import { useRouter } from "next/navigation";
@@ -241,81 +241,14 @@ export const ShiftEvent = ({
   };
 
   const renderRoleSelects = () => {
-    return shift?.shiftRole?.map((data: any) => {
-      const {
-        employees: availableEmployees,
-        isLoading,
-        pagination,
-        handleSearch,
-        handleLoadMore,
-        initialize,
-      } = useRoleEmployees(data?.role?.id, data.employee);
-      let employeeList = [...availableEmployees];
-
-      if (data?.employee) {
-        const employeeExists = employeeList.some(
-          (emp) => emp.id?.toString() === data.employee?.id?.toString()
-        );
-        if (!employeeExists) {
-          employeeList = [data.employee, ...employeeList];
-        }
-      }
-
-      const employeeName =
-        employeeList.find(
-          (employee) =>
-            employee.id?.toString() === data?.employee_id?.toString()
-        )?.name || "Select employee";
-
-      return (
-        <div
-          key={data.id}
-          className="flex items-center justify-start mt-1 overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <CheckCircle
-            size={14}
-            className={cn(
-              "mr-1",
-              data?.has_submitted_timesheet ? "text-green-600" : "text-gray-400"
-            )}
-          />
-
-          <span
-            className={cn(
-              "flex items-center flex-shrink-0 mr-1",
-              !data?.employee_id && "text-red-500"
-            )}
-            title={data?.role?.short_name || ""}
-          >
-            {data?.role?.short_name || ""}:
-          </span>
-
-          <div title={employeeName}>
-            <SMSCombobox
-              label=""
-              placeholder="Select Emp"
-              searchPlaceholder="Search employee..."
-              value={data?.employee_id?.toString()}
-              onValueChange={(value) =>
-                handleEmployeeChange(value, data?.id, shift)
-              }
-              options={employeeList.map((employee) => ({
-                value: employee.id?.toString() || "",
-                label: employee.name || "",
-              }))}
-              required
-              hasMore={pagination.page < pagination.total_pages}
-              loadingMore={isLoading}
-              onLoadMore={handleLoadMore}
-              onSearch={handleSearch}
-              onOpen={initialize}
-              className="w-fit h-2 min-h-3  m-0 text-[10px] bg-transparent border-none rounded-sm py-0 flex items-center hover:bg-transparent whitespace-nowrap overflow-hidden text-ellipsis px-0"
-            />
-          </div>
-        </div>
-      );
-    });
+    return shift?.shiftRole?.map((data: any) => (
+      <RoleSelect
+        key={data.id}
+        roleData={data}
+        shift={shift}
+        onEmployeeChange={handleEmployeeChange}
+      />
+    ));
   };
   const renderLocomotiveSelect = () => {
     if (!shift?.shiftDetail?.has_locomotive) return null;

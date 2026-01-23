@@ -88,7 +88,6 @@ const ImportOrderDialog = ({
             "tonnage",
             "distance_in_km",
             "return_schedule",
-            "date",
           ];
 
           const missingHeaders = expectedHeaders.filter(

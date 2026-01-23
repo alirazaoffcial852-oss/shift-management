@@ -1146,7 +1146,9 @@
           "selectPurposeFirst": "Please select purpose first",
           "cannotAddWagons": "Cannot add wagons for this purpose",
           "downloadStartDoc": "Download Start Location Document",
-          "downloadEndDoc": "Download End Location Document"
+          "downloadEndDoc": "Download End Location Document",
+          "viewStartDoc": "View Start Location Document",
+          "viewEndDoc": "View End Location Document"
         },
         "messages": {
           "wagonStatusUpdated": "Wagon status updated successfully",
@@ -1218,6 +1220,7 @@
           "currentLocation": "Current Location",
           "arrivalLocation": "Planned Arrival Location",
           "loadedEmptyLocation": "Loaded / Empty Location",
+          "PlannedCurrentLocation":"Planned current Location",
           "typeOfWagon": "Type of Wagon",
           "maxCapacity": "Max Capacity",
           "rail": "Rail",
@@ -1391,6 +1394,7 @@
       "lastUpdated": "Last Updated:",
       "statusHistory": "Status History",
       "currentLocation": "Current Location:",
+      "plannedCurrentLocation": "Planned Current Location:",
       "arrivalLocation": "Planned Arrival Location:",
       "na": "N/A",
       "noStatusHistoryAvailable": "No status history available",

@@ -200,9 +200,13 @@ export const useOrderCalendar = (view?: "weekly" | "monthly") => {
         );
 
         toast.success("Order delivery date updated successfully");
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error updating order date:", error);
-        toast.error("Failed to update order delivery date");
+        const errorMessage =
+          error?.data?.errors?.delivery_date?.[0] ||
+          error?.data?.message ||
+          "Failed to update order delivery date";
+        toast.error(errorMessage);
       }
     },
     [draggedOrder]
