@@ -17,6 +17,7 @@ frontend/
 ## Technology Stack
 
 - **Framework**: Next.js
+
 - **UI Components**: shadcn/ui
 - **Package Manager**: pnpm
 - **Build Tool**: Turborepo
