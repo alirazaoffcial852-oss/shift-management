@@ -3,6 +3,7 @@ import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { SMSInput } from "@workspace/ui/components/custom/SMSInput";
 import { Libraries } from "@react-google-maps/api";
 import Image from "next/image";
+import { getImagePath } from "@/utils/imagePath";
 
 const libraries: Libraries = ["places"];
 
@@ -165,7 +166,7 @@ function MapWithSearch({
               type="text"
               endIcon={
                 <Image
-                  src={"/images/location.svg"}
+                  src={getImagePath("/images/location.svg")}
                   alt={"alt"}
                   width={18}
                   height={18.73}

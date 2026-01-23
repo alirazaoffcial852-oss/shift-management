@@ -92,6 +92,7 @@ const ViewCustomer = () => {
         onTimeFilterChange={handleTimeFilterChange}
         onDateRangeChange={handleDateRangeChange}
         onSearchChange={handleSearch}
+        search={true}
         dateTimeFilter={true}
         actionsHeader={tCustomers("actions")}
         isLoading={isLoading}

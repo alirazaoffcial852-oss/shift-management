@@ -88,6 +88,7 @@ const ViewProjects = () => {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
         onSearchChange={handleSearch}
+        search={true}
         actionsHeader={tProjects("actions")}
         isLoading={isLoading}
       />

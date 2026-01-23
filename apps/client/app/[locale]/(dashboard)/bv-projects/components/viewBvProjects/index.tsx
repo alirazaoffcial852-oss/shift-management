@@ -89,6 +89,7 @@ const ViewBvProjects = () => {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
         onSearchChange={handleSearch}
+        search={true}
         actionsHeader={tBvProjects("actions")}
         isLoading={isLoading}
       />

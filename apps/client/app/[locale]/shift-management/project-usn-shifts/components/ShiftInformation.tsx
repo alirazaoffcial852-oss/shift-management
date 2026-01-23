@@ -19,6 +19,7 @@ import { ProjectUSNShift } from "@/types/projectUsn";
 import { Order } from "@/types/order";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
+import type { Location } from "@/types/location";
 
 interface ShiftInformationProps {
   selectedDate?: string | null;
@@ -67,7 +68,6 @@ const ShiftInformation = ({
     handleWagonSelection,
     handleWagonFilterChange,
     resetWagonFilters,
-    fetchWagons,
     handleProductChange,
     handleFileUpload,
     removeDocument,
@@ -81,11 +81,11 @@ const ShiftInformation = ({
     personalDetailErrors,
     warehouseLocations,
     handleShiftHandover,
+    hasMoreLocomotives,
+    handleLoadMoreLocomotives,
+    handleSearchLocomotives,
+    isLoadingLocomotives,
   } = useProjectUSNShift(returnTo, editMode, shiftId, existingShift);
-
-  useEffect(() => {
-    fetchWagons();
-  }, [fetchWagons]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -240,7 +240,11 @@ const ShiftInformation = ({
               options={locomotives}
               required
               error={errors.locomotiveId}
-              loading={loading.locomotives}
+              loading={isLoadingLocomotives && locomotives.length === 0}
+              hasMore={hasMoreLocomotives}
+              loadingMore={isLoadingLocomotives && locomotives.length > 0}
+              onLoadMore={handleLoadMoreLocomotives}
+              onSearch={handleSearchLocomotives}
               className="w-full"
             />
             {!formData.routePlanningEnabled && (
@@ -252,9 +256,11 @@ const ShiftInformation = ({
                 onValueChange={(value) =>
                   handleInputChange("warehouseLocation", value)
                 }
-                options={warehouseLocations.map((location) => ({
+                options={warehouseLocations.map((location: Location) => ({
                   value: location.id.toString(),
-                  label: `${location.name} (${location.type.toLowerCase()}) - ${location.location}`,
+                  label: location.location
+                    ? `${location.name} - ${location.location}`
+                    : location.name,
                 }))}
                 required
                 error={errors.warehouseLocation}
@@ -309,6 +315,7 @@ const ShiftInformation = ({
               onUpdate={handleInputChange}
               errors={personalDetailErrors}
               product={selectedProduct}
+              existingShift={existingShift}
             />
           )}
 

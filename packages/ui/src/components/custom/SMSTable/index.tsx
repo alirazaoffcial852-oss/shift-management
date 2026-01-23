@@ -132,18 +132,6 @@ export function SMSTable({
     return getNestedValue(row, column.accessor);
   };
 
-  if (isLoading) {
-    return (
-      <SMSTableSkeleton
-        columns={columns.length}
-        rows={10}
-        showSearch={search}
-        showActions={!!actions}
-        className={className}
-      />
-    );
-  }
-
   return (
     <>
       <div className="bg-white rounded-xl shadow-md p-4 md:p-6 mt-4 md:mt-6 !pb-1 !mb-4">
@@ -237,29 +225,41 @@ export function SMSTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((row, rowIndex) => (
-                <TableRow
-                  key={rowIndex}
-                  className={cn(getRowClassName?.(row), "transition-colors")}
-                >
-                  {allColumns.map((column, cellIndex) => (
-                    <TableCell
-                      key={`${cellIndex}`}
-                      className={cn(
-                        "whitespace-nowrap",
-                        cellIndex === 0 && "font-medium",
-                        column.accessor === "email" ? "" : "capitalize",
-                        column.className
-                      )}
-                    >
-                      {renderCell(column, row, rowIndex)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, rowIndex) => (
+                  <TableRow key={`skeleton-${rowIndex}`}>
+                    {allColumns.map((_, cellIndex) => (
+                      <TableCell key={`skeleton-cell-${cellIndex}`}>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                data.map((row, rowIndex) => (
+                  <TableRow
+                    key={rowIndex}
+                    className={cn(getRowClassName?.(row), "transition-colors")}
+                  >
+                    {allColumns.map((column, cellIndex) => (
+                      <TableCell
+                        key={`${cellIndex}`}
+                        className={cn(
+                          "whitespace-nowrap",
+                          cellIndex === 0 && "font-medium",
+                          column.accessor === "email" ? "" : "capitalize",
+                          column.className
+                        )}
+                      >
+                        {renderCell(column, row, rowIndex)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
-          {data.length === 0 && <NoDataFound />}
+          {!isLoading && data.length === 0 && <NoDataFound />}
           {pagination && totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
