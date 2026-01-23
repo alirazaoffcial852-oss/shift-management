@@ -4,7 +4,11 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { getToken } from "./getToken";
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+const isProduction = typeof window !== "undefined" && window.location.protocol === "https:";
+const baseURL = isProduction 
+  ? "/api/proxy"  
+  : process.env.NEXT_PUBLIC_API_BASE_URL;
 const instance = axios.create({
   baseURL,
   headers: {
@@ -26,9 +30,11 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    if (error.response.status === 401) {
+    if (error.response?.status === 401) {
       localStorage.clear();
-      window.location.replace("/sign-in");
+      const authUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "https://shift-management-auth.vercel.app";
+      const locale = window.location.pathname.split("/")[1] || "en";
+      window.location.href = `${authUrl}/${locale}/sign-in`;
     } else {
       console.error(error);
     }

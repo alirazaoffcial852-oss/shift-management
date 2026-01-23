@@ -22,14 +22,7 @@ const ProjectUsnProductForm: React.FC<ProjectUsnProductFormProps> = ({
   const router = useRouter();
   const tProduct = useTranslations("pages.products");
   const { supplierOptions } = useOrderForm();
-  const {
-    allCustomers,
-    pagination: customerPagination,
-    isLoadingCustomers,
-    isLoadingMoreCustomers,
-    handleLoadMoreCustomers,
-    handleSearchCustomers,
-  } = useProductForm();
+  const { allCustomers } = useProductForm();
 
   const {
     selectedProductName,
@@ -92,10 +85,6 @@ const ProjectUsnProductForm: React.FC<ProjectUsnProductFormProps> = ({
                 label: c.name,
               }))}
             required
-            hasMore={customerPagination.page < customerPagination.total_pages}
-            loadingMore={isLoadingMoreCustomers}
-            onLoadMore={handleLoadMoreCustomers}
-            onSearch={handleSearchCustomers}
           />
         </div>
 

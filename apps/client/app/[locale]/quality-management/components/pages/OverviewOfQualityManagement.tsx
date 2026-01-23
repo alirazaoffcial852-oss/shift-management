@@ -12,7 +12,6 @@ import QualityManagementService from "@/services/qualityManagement";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import "@/components/Tabs/tabs.css";
-import { getImagePath } from "@/utils/imagePath";
 import {
   createEmployeeFeedback,
   CreateEmployeeFeedbackPayload,
@@ -823,7 +822,7 @@ const OverviewOfQualityManagement: React.FC = () => {
               >
                 <span className="flex items-center gap-2 text-sm text-gray-800">
                   <img
-                    src={getImagePath("/images/Edit.png")}
+                    src="/images/Edit.png"
                     alt={t("addCustomerFeedback")}
                     className="w-5 h-5"
                   />
@@ -844,7 +843,7 @@ const OverviewOfQualityManagement: React.FC = () => {
               >
                 <span className="flex items-center gap-2 text-sm text-gray-800">
                   <img
-                    src={getImagePath("/images/Edit.png")}
+                    src="/images/Edit.png"
                     alt={t("addEmployeeFeedback")}
                     className="w-5 h-5"
                   />
@@ -865,7 +864,7 @@ const OverviewOfQualityManagement: React.FC = () => {
               >
                 <span className="flex items-center gap-2 text-sm text-gray-800">
                   <img
-                    src={getImagePath("/images/Edit.png")}
+                    src="/images/Edit.png"
                     alt={t("addCompanyFeedback")}
                     className="w-5 h-5"
                   />

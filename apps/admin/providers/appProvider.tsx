@@ -54,8 +54,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTokenState(null);
     setUser(null);
     setIsAuthenticated(false);
-    router.replace(`${process.env.NEXT_PUBLIC_AUTH_URL}/${locale}/sign-in`);
-  }, [router, locale]);
+    const authUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "https://shift-management-auth.vercel.app";
+    window.location.href = `${authUrl}/${locale}/sign-in`;
+  }, [locale]);
 
   const verifyToken = useCallback(
     async (tokenToVerify: string) => {
@@ -74,9 +75,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         return true;
-      } catch (error) {
+      } catch (error: any) {
         console.error("Token verification failed:", error);
-        logout();
+        const status = error?.status || error?.response?.status || error?.data?.status;
+        if (status === 401) {
+          logout();
+          return false;
+        }
+        console.warn("Token verification failed due to network error, not logging out");
         return false;
       } finally {
         setLoading(false);
@@ -119,8 +125,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error("Authentication error:", error);
         if (!loading) {
-          // Prevent redirect loop
-          window.location.replace(`${process.env.NEXT_PUBLIC_AUTH_URL}/${locale}/sign-in`);
+          // Prevent redirect loop - redirect to auth app
+          const authUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "https://shift-management-auth.vercel.app";
+          window.location.href = `${authUrl}/${locale}/sign-in`;
         }
       } finally {
         setLoading(false);

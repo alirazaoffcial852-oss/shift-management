@@ -6,7 +6,6 @@ import RegularHandoverBooksTable from "./components/RegularHandoverBooksTable";
 import USNHandoverBooksTable from "./components/USNHandoverBooksTable";
 import "@/components/OrderViewTabs/tabs.css";
 
-
 export default function HandoverBookDocumentsPage() {
   const t = useTranslations("common");
   const [activeTab, setActiveTab] = useState("regular");

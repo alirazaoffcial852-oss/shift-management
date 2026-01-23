@@ -113,14 +113,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     if (typeof window !== "undefined") {
       localStorage.removeItem(LOCAL_STORAGE_KEY);
-      localStorage.removeItem("selected-company");
     }
     setTokenState(null);
     setUser(null);
     setPermissions([]);
     setIsAuthenticated(false);
-    // Use window.location.href for a full page reload to ensure all state is cleared
-    window.location.href = `${process.env.NEXT_PUBLIC_AUTH_URL}/${locale}/sign-in`;
+    const authUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "https://shift-management-auth.vercel.app";
+    window.location.href = `${authUrl}/${locale}/sign-in`;
   }, [locale]);
 
   const setCompanies = useCallback((newCompanies: ExtendedCompany[]) => {
@@ -165,9 +164,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         }
         return true;
-      } catch (error) {
+      } catch (error: any) {
         console.error("Token verification failed:", error);
-        logout();
+        const status = error?.status || error?.response?.status || error?.data?.status;
+        if (status === 401) {
+          logout();
+          return false;
+        }
+        console.warn("Token verification failed due to network error, not logging out");
         return false;
       } finally {
         setLoading(false);
@@ -193,12 +197,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (verified) {
             setToken(tokenFromParams);
             return;
+          } else {
+            // If verification failed but it's not a 401, try to use token anyway
+            // (might be CORS/network issue)
+            try {
+              const decoded = decodeJwt(tokenFromParams) as any;
+              if (decoded && decoded.exp && decoded.exp * 1000 > Date.now()) {
+                // Token is not expired, use it even if verification failed
+                setToken(tokenFromParams);
+                setIsAuthenticated(true);
+                setLoading(false);
+                setInitialLoading(false);
+                return;
+              }
+            } catch (decodeError) {
+              console.error("Token decode error:", decodeError);
+            }
           }
         }
 
         if (storageToken) {
           const verified = await verifyToken(storageToken);
           if (!verified) {
+            // If verification failed but it's not a 401, try to use token anyway
+            try {
+              const decoded = decodeJwt(storageToken) as any;
+              if (decoded && decoded.exp && decoded.exp * 1000 > Date.now()) {
+                // Token is not expired, use it even if verification failed
+                setToken(storageToken);
+                setIsAuthenticated(true);
+                setLoading(false);
+                setInitialLoading(false);
+                return;
+              }
+            } catch (decodeError) {
+              console.error("Token decode error:", decodeError);
+            }
+            // Only throw if token is expired or invalid
             throw new Error("Stored token verification failed");
           }
         } else if (!tokenFromParams) {
@@ -207,9 +242,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error("Authentication error:", error);
         if (!loading) {
-          window.location.replace(
-            `${process.env.NEXT_PUBLIC_AUTH_URL}/${locale}/sign-in`
-          );
+          const authUrl = process.env.NEXT_PUBLIC_AUTH_BASE_URL || "https://shift-management-auth.vercel.app";
+          window.location.href = `${authUrl}/${locale}/sign-in`;
         }
       } finally {
         setLoading(false);

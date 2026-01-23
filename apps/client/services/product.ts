@@ -1,5 +1,3 @@
-import { STATUS } from "@/types/shared/global";
-import { buildSearchParams } from "@/utils/common/url";
 import http from "@workspace/ui/lib/http";
 
 class ProductService {
@@ -8,17 +6,11 @@ class ProductService {
     limit: number,
     company_id: number,
     status?: string,
-    search?: string
+    searchTerm?: string
   ) {
-    const searchParams = buildSearchParams({
-      page,
-      limit,
-      company_id,
-      status,
-      search,
-    });
-
-    return await http.get(`/products?${searchParams.toString()}`);
+    return await http.get(
+      `/products?page=${page}&limit=${limit}&&company_id=${company_id}&status=${status}`
+    );
   }
 
   async getProductById(id: number) {

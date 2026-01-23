@@ -1,20 +1,19 @@
 "use client";
 
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo } from "react";
 import { SMSInput } from "@workspace/ui/components/custom/SMSInput";
 import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
-import { Plus, Minus, Trash, Download, FileText, Calendar, Eye } from "lucide-react";
+import { Plus, Minus, Trash, Download, FileText, Calendar } from "lucide-react";
 import { RoutePlanningRow, RoutePlanningRowErrors } from "@/types/projectUsn";
 import { PURPOSE_OPTIONS } from "@/types/projectUsn";
 import { Order } from "@/types/order";
 import { Location } from "@/types/location";
 import ProjectUSNShiftsService from "@/services/projectUsnShift";
-import LocationService from "@/services/location";
 import { toast } from "sonner";
 import { pdf } from "@react-pdf/renderer";
 import { RouteLocationPDF } from "../usn-shifts/(views)/monthly/[id]/components/RouteLocationPDF";
+import { SMSButton } from "@workspace/ui/components/custom/SMSButton";
 import { useTranslations } from "next-intl";
-import { useCompany } from "@/providers/appProvider";
 
 interface RoutePlanningTableProps {
   routePlanning: RoutePlanningRow[];
@@ -45,125 +44,12 @@ const RoutePlanningTable: React.FC<RoutePlanningTableProps> = ({
   onOpenWagonModal,
   onOpenOrderModal,
   orders,
-  locations: initialLocations,
+  locations,
   wagons,
   errors,
 }) => {
   const t = useTranslations("pages.projectUsn.routePlanning");
   const tPdf = useTranslations("pdf");
-  const { company } = useCompany();
-
-  const [allLocations, setAllLocations] = useState<Location[]>(initialLocations);
-  const [locationPage, setLocationPage] = useState(1);
-  const [locationTotalPages, setLocationTotalPages] = useState(1);
-  const [loadingMoreLocations, setLoadingMoreLocations] = useState(false);
-  const [locationSearchQuery, setLocationSearchQuery] = useState("");
-
-  useEffect(() => {
-    if (company?.id) {
-      LocationService.getAllLocations(1, 20, company.id, "", "")
-        .then((response) => {
-          if (response?.data?.pagination) {
-            setLocationTotalPages(response.data.pagination.total_pages || 1);
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching location pagination:", error);
-        });
-    }
-  }, [company?.id]);
-
-  useEffect(() => {
-    if (initialLocations.length > 0 && allLocations.length === 0) {
-      setAllLocations(initialLocations);
-    }
-  }, []);
-
-  const loadMoreLocations = useCallback(
-    async (searchQuery?: string) => {
-      if (!company?.id || loadingMoreLocations || locationPage >= locationTotalPages) {
-        return;
-      }
-
-      setLoadingMoreLocations(true);
-      try {
-        const nextPage = locationPage + 1;
-        const queryToUse = searchQuery !== undefined ? searchQuery : locationSearchQuery;
-        const response = await LocationService.getAllLocations(
-          nextPage,
-          20,
-          company.id,
-          queryToUse,
-          ""
-        );
-
-        if (response?.data?.data) {
-          setAllLocations((prev) => [...prev, ...response.data.data]);
-          setLocationPage(nextPage);
-          if (response.data.pagination) {
-            setLocationTotalPages(response.data.pagination.total_pages || 1);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading more locations:", error);
-      } finally {
-        setLoadingMoreLocations(false);
-      }
-    },
-    [company?.id, locationPage, locationTotalPages, loadingMoreLocations, locationSearchQuery]
-  );
-
-  const handleLocationSearch = useCallback(
-    async (searchQuery: string) => {
-      if (!company?.id) return;
-
-      setLocationSearchQuery(searchQuery);
-      setLoadingMoreLocations(true);
-      try {
-        if (searchQuery === "") {
-          setAllLocations(initialLocations);
-          setLocationPage(1);
-          const response = await LocationService.getAllLocations(1, 20, company.id, "", "");
-          if (response?.data?.pagination) {
-            setLocationTotalPages(response.data.pagination.total_pages || 1);
-          }
-        } else {
-          const response = await LocationService.getAllLocations(
-            1,
-            20,
-            company.id,
-            searchQuery,
-            ""
-          );
-
-          if (response?.data?.data) {
-            setAllLocations(response.data.data);
-            setLocationPage(1);
-            if (response.data.pagination) {
-              setLocationTotalPages(response.data.pagination.total_pages || 1);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error searching locations:", error);
-      } finally {
-        setLoadingMoreLocations(false);
-      }
-    },
-    [company?.id, initialLocations]
-  );
-
-
-  const locationOptions = useMemo(
-    () =>
-      allLocations.map((location) => ({
-        value: location.name,
-        label: `${location.name} - (${location.type.toLowerCase()})`,
-      })),
-    [allLocations]
-  );
-
-  const hasMoreLocations = locationPage < locationTotalPages;
 
   const purposeOptions = useMemo(
     () =>
@@ -195,23 +81,6 @@ const RoutePlanningTable: React.FC<RoutePlanningTableProps> = ({
         toast.error(t("messages.wagonStatusFailed"));
       }
     }
-  };
-
-  const handleViewExistingDocument = (
-    row: RoutePlanningRow,
-    locationType: "start" | "end"
-  ) => {
-    const documentUrl = locationType === "start" 
-      ? row.starting_location_document_url 
-      : row.ending_location_document_url;
-
-    if (!documentUrl) return;
-
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL?.replace("/api", "") ||
-      "http://localhost:5051";
-    const fullUrl = `${baseUrl}/${documentUrl}`;
-    window.open(fullUrl, "_blank");
   };
 
   const handleDownloadLocationPDF = async (
@@ -567,6 +436,7 @@ const RoutePlanningTable: React.FC<RoutePlanningTableProps> = ({
               ].includes(row.selectPurpose || "");
               const firstCount = (row.selectWagon || []).length;
               const secondCount = (row.selectSecondWagon || []).length;
+              // Left to drop = still checked/kept in Select 2nd Wagon
               const leftCount = Math.max(0, secondCount);
 
               const rowErrors = errors?.[row.id];
@@ -580,13 +450,12 @@ const RoutePlanningTable: React.FC<RoutePlanningTableProps> = ({
                         onValueChange={(value) =>
                           onUpdateRow(row.id, "startLocation", value)
                         }
-                        options={locationOptions}
+                        options={locations.map((location) => ({
+                          value: location.name,
+                          label: `${location.name} - (${location.type.toLowerCase()})`,
+                        }))}
                         placeholder={t("placeholders.startLocation")}
                         className={`w-full ${rowErrors?.startLocation ? "border-red-500" : ""}`}
-                        hasMore={hasMoreLocations}
-                        onLoadMore={() => loadMoreLocations()}
-                        loadingMore={loadingMoreLocations}
-                        onSearch={handleLocationSearch}
                       />
                       {rowErrors?.startLocation && (
                         <p className="text-red-500 text-xs mt-1">
@@ -701,13 +570,12 @@ const RoutePlanningTable: React.FC<RoutePlanningTableProps> = ({
                         onValueChange={(value) =>
                           onUpdateRow(row.id, "arrivalLocation", value)
                         }
-                        options={locationOptions}
+                        options={locations.map((location) => ({
+                          value: location.name,
+                          label: `${location.name} -  (${location.type.toLowerCase()})`,
+                        }))}
                         placeholder={t("placeholders.arrivalLocation")}
                         className={`w-full ${rowErrors?.arrivalLocation ? "border-red-500" : ""}`}
-                        hasMore={hasMoreLocations}
-                        onLoadMore={() => loadMoreLocations()}
-                        loadingMore={loadingMoreLocations}
-                        onSearch={handleLocationSearch}
                       />
                       {rowErrors?.arrivalLocation && (
                         <p className="text-red-500 text-xs mt-1">
@@ -788,73 +656,36 @@ const RoutePlanningTable: React.FC<RoutePlanningTableProps> = ({
                     </div>
                   </td>
                   <td className="border-b border-gray-300 px-4 py-2 text-center">
-                    {(row.starting_location_document_url || 
-                      (row.startLocation &&
-                      row.selectWagon &&
-                      row.selectWagon.length > 0)) ? (
-                      <div className="flex items-center justify-center gap-2">
-                        {row.starting_location_document_url && (
-                          <button
-                            type="button"
-                            onClick={() => handleViewExistingDocument(row, "start")}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors group"
-                            title={t("tooltips.viewStartDoc")}
-                          >
-                            <FileText className="h-5 w-5" />
-                            <Eye className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
-                          </button>
-                        )}
-                        {row.startLocation &&
-                        row.selectWagon &&
-                        row.selectWagon.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadLocationPDF(row, "start")}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors group"
-                            title={t("tooltips.downloadStartDoc")}
-                          >
-                            <FileText className="h-5 w-5" />
-                            <Download className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
-                          </button>
-                        )}
-                      </div>
+                    {row.startLocation &&
+                    row.selectWagon &&
+                    row.selectWagon.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadLocationPDF(row, "start")}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors group"
+                        title={t("tooltips.downloadStartDoc")}
+                      >
+                        <FileText className="h-5 w-5" />
+                        <Download className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
+                      </button>
                     ) : (
                       <span className="text-gray-400 text-xs">-</span>
                     )}
                   </td>
                   <td className="border-b border-gray-300 px-4 py-2 text-center">
-                    {(row.ending_location_document_url ||
-                      (row.arrivalLocation &&
-                      ((row.selectSecondWagon &&
-                        row.selectSecondWagon.length > 0) ||
-                        (row.selectWagon && row.selectWagon.length > 0)))) ? (
-                      <div className="flex items-center justify-center gap-2">
-                        {row.ending_location_document_url && (
-                          <button
-                            type="button"
-                            onClick={() => handleViewExistingDocument(row, "end")}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors group"
-                            title={t("tooltips.viewEndDoc")}
-                          >
-                            <FileText className="h-5 w-5" />
-                            <Eye className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
-                          </button>
-                        )}
-                        {row.arrivalLocation &&
-                        ((row.selectSecondWagon &&
-                          row.selectSecondWagon.length > 0) ||
-                          (row.selectWagon && row.selectWagon.length > 0)) && (
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadLocationPDF(row, "end")}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors group"
-                            title={t("tooltips.downloadEndDoc")}
-                          >
-                            <FileText className="h-5 w-5" />
-                            <Download className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
-                          </button>
-                        )}
-                      </div>
+                    {row.arrivalLocation &&
+                    ((row.selectSecondWagon &&
+                      row.selectSecondWagon.length > 0) ||
+                      (row.selectWagon && row.selectWagon.length > 0)) ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadLocationPDF(row, "end")}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors group"
+                        title={t("tooltips.downloadEndDoc")}
+                      >
+                        <FileText className="h-5 w-5" />
+                        <Download className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
+                      </button>
                     ) : (
                       <span className="text-gray-400 text-xs">-</span>
                     )}

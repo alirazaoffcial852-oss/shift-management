@@ -17,8 +17,6 @@ export const navItems = [
       "track-cost",
       "wagon-history",
       "project-usn-product",
-      "products/add",
-      "products/project-usn-product/add"
     ],
     icon: "/images/top/home.svg",
     translationKey: "home",

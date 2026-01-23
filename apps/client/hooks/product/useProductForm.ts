@@ -215,22 +215,14 @@ export const useProductForm = (
     setErrors({});
   };
 
-  const [isLoadingMoreCustomers, setIsLoadingMoreCustomers] = useState(false);
-
   const fetchCustomers = useCallback(
-    async (page = 1, searchTerm = "", append = false) => {
-      const isLoadMore = append && page > 1;
-      
+    async (page = 1, searchTerm = "") => {
       try {
         if (!company?.id) {
           return;
         }
 
-        if (isLoadMore) {
-          setIsLoadingMoreCustomers(true);
-        } else {
-          setIsLoadingCustomers(true);
-        }
+        setIsLoadingCustomers(true);
 
         const response = await CustomerService.getAllCustomers(
           page,
@@ -241,18 +233,16 @@ export const useProductForm = (
         );
 
         if (response?.data) {
+          setAllCustomers(response.data?.data);
           const newCustomers = response.data?.data?.map((customer: any) => ({
             id: customer.id,
             name: customer.name,
-            is_for_project_usn_only: customer.is_for_project_usn_only,
           }));
 
-          if (append && page > 1) {
-            setAllCustomers((prev) => [...prev, ...response.data?.data]);
-            setCustomers((prev) => [...prev, ...newCustomers]);
-          } else {
-            setAllCustomers(response.data?.data);
+          if (page === 1) {
             setCustomers(newCustomers);
+          } else {
+            setCustomers((prev) => [...prev, ...newCustomers]);
           }
 
           if (response.data.pagination) {
@@ -267,11 +257,7 @@ export const useProductForm = (
       } catch (error) {
         console.error("Error fetching customers:", error);
       } finally {
-        if (isLoadMore) {
-          setIsLoadingMoreCustomers(false);
-        } else {
-          setIsLoadingCustomers(false);
-        }
+        setIsLoadingCustomers(false);
       }
     },
     [company, pagination.limit]
@@ -279,7 +265,7 @@ export const useProductForm = (
 
   useEffect(() => {
     if (company?.id) {
-      fetchCustomers(1, "", false);
+      fetchCustomers(1, "");
     }
   }, [company, fetchCustomers]);
 
@@ -349,20 +335,23 @@ export const useProductForm = (
     }
   };
 
-  const handleLoadMoreCustomers = useCallback(() => {
-    if (pagination.page < pagination.total_pages && !isLoadingMoreCustomers) {
-      fetchCustomers(pagination.page + 1, searchQuery, true);
-    }
-  }, [fetchCustomers, pagination, searchQuery, isLoadingMoreCustomers]);
+  const handleLoadMoreCustomers = useCallback(
+    (searchTerm = "") => {
+      if (pagination.page < pagination.total_pages) {
+        fetchCustomers(pagination.page + 1, searchTerm);
+      }
+    },
+    [fetchCustomers, pagination]
+  );
 
   const handleSearchCustomers = useCallback(
     (searchTerm: string) => {
       setSearchQuery(searchTerm);
+
       setpagination((prev) => ({
         ...prev,
         page: 1,
       }));
-      fetchCustomers(1, searchTerm, false);
 
       fetchCustomers(1, searchTerm);
     },
@@ -660,11 +649,10 @@ export const useProductForm = (
     createFormData,
     pagination,
     isLoadingCustomers,
-    isLoadingMoreCustomers,
     handleLoadMoreCustomers,
     handleSearchCustomers,
     searchQuery,
-    fetchCustomers: () => fetchCustomers(1, "", false),
+    fetchCustomers: () => fetchCustomers(1, ""),
     handleCustomizeProduct,
     allCustomers,
   };

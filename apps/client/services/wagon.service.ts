@@ -309,56 +309,6 @@ class WagonService {
 
     return await http.get(`/wagons/history?${queryParams.toString()}`);
   }
-
-  async getWagonFilters(
-    page: number = 1,
-    limit: number = 20,
-    filters?: {
-      status?: string;
-      wagon_type?: string;
-      rail?: string;
-      location_id?: string | string[];
-      date?: string;
-      next_status?: string;
-      loaded_location?: string;
-    }
-  ) {
-    const params = new URLSearchParams();
-    params.set("page", page.toString());
-    params.set("limit", limit.toString());
-
-    if (filters) {
-      if (filters.status) {
-        params.set("status", filters.status);
-      }
-      if (filters.date) {
-        params.set("date", filters.date);
-      }
-      if (filters.wagon_type) {
-        params.set("wagon_type", filters.wagon_type);
-      }
-      if (filters.rail) {
-        params.set("rail", filters.rail);
-      }
-      if (filters.location_id) {
-        if (Array.isArray(filters.location_id)) {
-          filters.location_id.forEach((loc) => {
-            if (loc) params.append("location_id", loc);
-          });
-        } else if (filters.location_id) {
-          params.append("location_id", filters.location_id);
-        }
-      }
-      if (filters.next_status) {
-        params.set("next_status", filters.next_status);
-      }
-      if (filters.loaded_location) {
-        params.set("loaded_location", filters.loaded_location);
-      }
-    }
-
-    return await http.get(`/wagons/wagon-filters?${params.toString()}`);
-  }
 }
 
 export default new WagonService();

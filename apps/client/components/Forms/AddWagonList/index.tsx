@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { SMSInput } from "@workspace/ui/components/custom/SMSInput";
 import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
 import { SMSButton } from "@workspace/ui/components/custom/SMSButton";
@@ -8,9 +8,7 @@ import { Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import SMSBackButton from "@workspace/ui/components/custom/SMSBackButton";
 import { useWagonForm } from "@/hooks/wagon/useWagonForm";
-import { useCompany } from "@/providers/appProvider";
-import LocationService from "@/services/location";
-import { Location } from "@/types/location";
+import { useLocationsList } from "@/hooks/location/useLocationsList";
 import { wagonTypeDisplayNames } from "@/types/order";
 
 interface AddWagonFormProps {
@@ -21,14 +19,7 @@ interface AddWagonFormProps {
 const AddWagonForm: React.FC<AddWagonFormProps> = ({ id, onClose }) => {
   const t = useTranslations("common");
   const tWagon = useTranslations("pages.wagon");
-  const { company } = useCompany();
-
-  const [allLocations, setAllLocations] = useState<Location[]>([]);
-  const [locationPage, setLocationPage] = useState(1);
-  const [locationTotalPages, setLocationTotalPages] = useState(1);
-  const [locationSearchQuery, setLocationSearchQuery] = useState("");
-  const [loadingMoreLocations, setLoadingMoreLocations] = useState(false);
-  const [loadingLocations, setLoadingLocations] = useState(false);
+  const { locations, loading: loadingLocations } = useLocationsList();
 
   const {
     formData,
@@ -49,115 +40,15 @@ const AddWagonForm: React.FC<AddWagonFormProps> = ({ id, onClose }) => {
   const [showDamageNotes, setShowDamageNotes] = useState(false);
 
   useEffect(() => {
-    if (company?.id) {
-      const fetchInitialLocations = async () => {
-        setLoadingLocations(true);
-        try {
-          const response = await LocationService.getAllLocations(
-            1,
-            20,
-            company.id,
-            "",
-            ""
-          );
-          if (response?.data?.data) {
-            setAllLocations(response.data.data);
-            if (response.data.pagination) {
-              setLocationTotalPages(response.data.pagination.total_pages || 1);
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching locations:", error);
-        } finally {
-          setLoadingLocations(false);
-        }
-      };
-      fetchInitialLocations();
-    }
-  }, [company?.id]);
-
-  const loadMoreLocations = useCallback(async () => {
-    if (loadingMoreLocations || locationPage >= locationTotalPages || !company?.id) {
-      return;
-    }
-
-    setLoadingMoreLocations(true);
-    try {
-      const nextPage = locationPage + 1;
-      const response = await LocationService.getAllLocations(
-        nextPage,
-        20,
-        company.id,
-        locationSearchQuery,
-        ""
-      );
-
-      if (response?.data?.data) {
-        setAllLocations((prev) => [...prev, ...response.data.data]);
-        setLocationPage(nextPage);
-        if (response.data.pagination) {
-          setLocationTotalPages(response.data.pagination.total_pages || 1);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading more locations:", error);
-    } finally {
-      setLoadingMoreLocations(false);
-    }
-  }, [loadingMoreLocations, locationPage, locationTotalPages, company?.id, locationSearchQuery]);
-
-  const handleLocationSearch = useCallback(
-    async (searchQuery: string) => {
-      if (!company?.id) return;
-
-      setLocationSearchQuery(searchQuery);
-      setLoadingMoreLocations(true);
-      try {
-        if (searchQuery === "") {
-          const response = await LocationService.getAllLocations(1, 20, company.id, "", "");
-          if (response?.data?.data) {
-            setAllLocations(response.data.data);
-            setLocationPage(1);
-            if (response?.data?.pagination) {
-              setLocationTotalPages(response.data.pagination.total_pages || 1);
-            }
-          }
-        } else {
-          const response = await LocationService.getAllLocations(
-            1,
-            20,
-            company.id,
-            searchQuery,
-            ""
-          );
-
-          if (response?.data?.data) {
-            setAllLocations(response.data.data);
-            setLocationPage(1);
-            if (response.data.pagination) {
-              setLocationTotalPages(response.data.pagination.total_pages || 1);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error searching locations:", error);
-      } finally {
-        setLoadingMoreLocations(false);
-      }
-    },
-    [company?.id]
-  );
-
-  useEffect(() => {
-    if (id && allLocations.length > 0 && !formData.location_id) {
-      const matchedLocation = allLocations.find(
+    if (id && locations.length > 0 && !formData.location_id) {
+      const matchedLocation = locations.find(
         (loc) => loc.id === formData.location_id
       );
       if (matchedLocation) {
         handleInputChange("location_id", matchedLocation.id);
       }
     }
-  }, [id, allLocations, formData.location_id, handleInputChange]);
+  }, [id, locations, formData.location_id, handleInputChange]);
 
   const formatWagonNumberDisplay = (value: string) => {
     if (!value) return "";
@@ -189,16 +80,10 @@ const AddWagonForm: React.FC<AddWagonFormProps> = ({ id, onClose }) => {
     handleInputChange("wagon_number", digitsOnly);
   };
 
-  const locationOptions = useMemo(
-    () =>
-      allLocations.map((location) => ({
-        value: location.id.toString(),
-        label: location.name || location.location,
-      })),
-    [allLocations]
-  );
-
-  const hasMoreLocations = locationPage < locationTotalPages;
+  const locationOptions = locations.map((location) => ({
+    value: location.id.toString(),
+    label: location.name || location.location,
+  }));
 
   const wagonTypeOptions = wagonTypeDisplayNames.map((displayName) => ({
     label: displayName,
@@ -272,10 +157,9 @@ const AddWagonForm: React.FC<AddWagonFormProps> = ({ id, onClose }) => {
               <SMSCombobox
                 label={tWagon("location")}
                 placeholder={tWagon("enterLocation")}
-                searchPlaceholder="Search location..."
                 value={formData.location_id?.toString() || ""}
                 onValueChange={(value) => {
-                  const selectedLocation = allLocations.find(
+                  const selectedLocation = locations.find(
                     (loc) => loc.id.toString() === value
                   );
                   if (selectedLocation) {
@@ -286,10 +170,6 @@ const AddWagonForm: React.FC<AddWagonFormProps> = ({ id, onClose }) => {
                 required
                 error={errors.location_id}
                 disabled={loadingLocations}
-                hasMore={hasMoreLocations}
-                loadingMore={loadingMoreLocations}
-                onLoadMore={loadMoreLocations}
-                onSearch={handleLocationSearch}
               />
 
               <SMSInput

@@ -32,7 +32,6 @@ export const useEmployeeTable = (initialPage = 1, limit = 20) => {
           pagination.limit,
           company.id as number,
           tabValue,
-          undefined,
           searchTermParam
         );
 

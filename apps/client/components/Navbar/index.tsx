@@ -8,7 +8,6 @@ import { useAuth, useCompany } from "@/providers/appProvider";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePermission } from "@/hooks/usePermission";
-import { getImagePath } from "@/utils/imagePath";
 
 const Navbar = () => {
   const currentPath = usePathname();
@@ -184,7 +183,7 @@ const Navbar = () => {
                         <div className="flex justify-center items-center h-[28px]">
                           <div className="relative w-[24px] md:w-[27.35px] h-[24px] md:h-[28.47px]">
                             <Image
-                              src={getImagePath(item.icon || "/placeholder.svg")}
+                              src={item.icon || "/placeholder.svg"}
                               alt={t(item.translationKey || "")}
                               fill
                               className="object-contain"

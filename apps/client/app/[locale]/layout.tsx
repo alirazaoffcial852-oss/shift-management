@@ -26,8 +26,8 @@ export default async function LocaleLayout({
   const messages = await getMessages(locale);
 
   return (
-    <html lang={locale} className="overflow-x-hidden h-full" suppressHydrationWarning>
-      <body className="overflow-x-hidden max-w-full flex flex-col min-h-screen" suppressHydrationWarning>
+    <html lang={locale} className="overflow-x-hidden h-full">
+      <body className="overflow-x-hidden max-w-full flex flex-col min-h-screen">
         <LocaleProvider locale={locale} messages={messages}>
           <ClientWrapper>
             <ProfileProvider>

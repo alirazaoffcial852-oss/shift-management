@@ -745,7 +745,6 @@
       "lastUpdated": "Zuletzt aktualisiert:",
       "statusHistory": "Statusverlauf",
       "currentLocation": "Aktueller Standort:",
-      "plannedCurrentLocation": "Geplanter aktueller Standort:",
       "arrivalLocation": "Ankunftsstandort:",
       "na": "N/V",
       "noStatusHistoryAvailable": "Keine Statushistorie verfügbar",
@@ -1242,9 +1241,7 @@
           "selectPurposeFirst": "Bitte zuerst den Zweck auswählen",
           "cannotAddWagons": "Für diesen Zweck können keine Wagen hinzugefügt werden",
           "downloadStartDoc": "Wagenliste Startort herunterladen",
-          "downloadEndDoc": "Wagenliste Ankunftsort herunterladen",
-          "viewStartDoc": "Wagenliste Startort anzeigen",
-          "viewEndDoc": "Wagenliste Ankunftsort anzeigen"
+          "downloadEndDoc": "Wagenliste Ankunftsort herunterladen"
         },
         "messages": {
           "wagonStatusUpdated": "Wagenstatus erfolgreich aktualisiert",
@@ -1316,7 +1313,6 @@
           "currentLocation": "Aktueller Standort",
           "arrivalLocation": "Ankunftsstandort",
           "loadedEmptyLocation": "Beladen / Leer Standort",
-          "PlannedCurrentLocation":"Geplanter aktueller Standort",
           "typeOfWagon": "Gattung",
           "maxCapacity": "Max. Kapazität",
           "rail": "Gleis",

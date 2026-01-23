@@ -24,7 +24,6 @@ export const SearchFilters = ({
   className = "",
   dateFilter,
 }: TableFiltersProps) => {
-  const [searchValue, setSearchValue] = useState<string>("");
   const [range, setRange] = useState<DateRange | undefined>({
     from: new Date(2024, 5, 28),
     to: new Date(2024, 8, 30),
@@ -68,11 +67,7 @@ export const SearchFilters = ({
           placeholder={searchPlaceholder}
           startIcon={<Search className="w-4 h-4" />}
           className="w-full"
-          value={searchValue}
-          onChange={(e) => {
-            setSearchValue(e.target.value);
-            onSearchChange?.(e.target.value);
-          }}
+          onChange={(e) => onSearchChange?.(e.target.value)}
         />
       </div>
 

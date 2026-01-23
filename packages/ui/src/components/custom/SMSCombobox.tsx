@@ -241,12 +241,8 @@ export const SMSCombobox = React.forwardRef<HTMLDivElement, SMSComboboxProps>(
                 <CommandList className="overflow-auto flex-grow capitalize">
                   <CommandEmpty>{emptyText}</CommandEmpty>
                   <CommandGroup>
-                    {filteredOptions.map((option, index) => (
-                      <CommandItem
-                        key={`${option.value}-${index}`}
-                        value={option.value}
-                        onSelect={() => handleSelect(option.value)}
-                      >
+                    {filteredOptions.map((option) => (
+                      <CommandItem key={option.value} value={option.value} onSelect={() => handleSelect(option.value)}>
                         <Check className={cn("mr-2 h-4 w-4", isSelected(option.value) ? "opacity-100" : "opacity-0")} />
                         {option.label}
                       </CommandItem>

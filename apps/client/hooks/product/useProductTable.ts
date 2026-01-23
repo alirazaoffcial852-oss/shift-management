@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useCompany } from "@/providers/appProvider";
 import ProductService from "@/services/product";
 import { Product } from "@/types/product";
@@ -10,10 +10,8 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
   const { company } = useCompany();
   const [tabValue, setTabValue] = useState<STATUS>("ACTIVE");
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [pagination, setPagination] = useState({
     page: initialPage,
     limit: limit,
@@ -21,20 +19,10 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
     total_pages: 0,
   });
   const [error, setError] = useState<string | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastDebouncedSearchRef = useRef<string>("");
-  const lastPageRef = useRef<number>(1);
-  const lastTabValueRef = useRef<STATUS>(tabValue);
 
   const fetchProducts = useCallback(
-    async (page = 1, searchTermParam = "", append = false) => {
-      const isLoadMore = append && page > 1;
-      
-      if (isLoadMore) {
-        setIsLoadingMore(true);
-      } else {
-        setIsLoading(true);
-      }
+    async (page = 1, searchTermParam = "") => {
+      setIsLoading(true);
       setError(null);
       try {
         if (!company?.id) {
@@ -51,11 +39,8 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
 
         const newProducts = response.data?.data || [];
 
-        if (append && page > 1) {
-          setProducts((prev) => [...prev, ...newProducts]);
-        } else {
-          setProducts(newProducts);
-        }
+        // Always replace products for standard pagination
+        setProducts(newProducts);
 
         if (response.data.pagination) {
           setPagination({
@@ -73,66 +58,21 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
         console.error("Error fetching products:", err);
         return null;
       } finally {
-        if (isLoadMore) {
-          setIsLoadingMore(false);
-        } else {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     },
     [company, pagination.limit, tabValue]
   );
 
   useEffect(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      if (lastDebouncedSearchRef.current !== searchTerm) {
-        setPagination((prev) => ({ ...prev, page: 1 }));
-        setProducts([]); 
-        lastDebouncedSearchRef.current = searchTerm;
-      }
-    }, 500);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [searchTerm]);
-
-  useEffect(() => {
-    if (lastTabValueRef.current !== tabValue) {
-      lastTabValueRef.current = tabValue;
-      setPagination((prev) => ({ ...prev, page: 1 }));
-      setProducts([]);
-      lastDebouncedSearchRef.current = "";
-      lastPageRef.current = 1;
-    }
-  }, [tabValue]);
-
-  useEffect(() => {
-    const isSearchChange = lastDebouncedSearchRef.current !== debouncedSearchTerm;
-    const isPageIncrement = pagination.page > lastPageRef.current;
-    
-    const shouldAppend = isPageIncrement && !isSearchChange && pagination.page > 1;
-    
-    if (isSearchChange) {
-      lastDebouncedSearchRef.current = debouncedSearchTerm;
-    }
-    lastPageRef.current = pagination.page;
-    
-    fetchProducts(pagination.page, debouncedSearchTerm, shouldAppend);
-  }, [pagination.page, debouncedSearchTerm, fetchProducts, tabValue]);
+    fetchProducts(pagination.page, searchTerm);
+  }, [pagination.page, searchTerm, fetchProducts]);
 
   const handleLoadMore = useCallback(() => {
-    if (pagination.page < pagination.total_pages && !isLoadingMore) {
+    if (pagination.page < pagination.total_pages) {
       setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
     }
-  }, [pagination.page, pagination.total_pages, isLoadingMore]);
+  }, [pagination.page, pagination.total_pages]);
 
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
@@ -142,9 +82,6 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
   const handleTabChange = useCallback((val: STATUS) => {
     setTabValue(val);
     setPagination((prev) => ({ ...prev, page: 1 }));
-    setProducts([]);
-    lastDebouncedSearchRef.current = ""; 
-    lastPageRef.current = 1; 
   }, []);
 
   const updateProductStatus = useCallback((productId: number) => {
@@ -184,7 +121,7 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
   }, []);
 
   const formattedProducts = products.map((product: any, index: number) => ({
-    id: index + 1,
+    id: (pagination.page - 1) * pagination.limit + index + 1,
     productName: product.name,
     ...product,
   }));
@@ -198,12 +135,11 @@ export const useProductTable = (initialPage = 1, limit = 20) => {
     rawProducts: products,
     updateProductStatus,
     isLoading,
-    isLoadingMore,
     error,
     pagination,
     handleLoadMore,
     removeProduct,
-    refetch: () => fetchProducts(pagination.page, searchTerm, false),
+    refetch: () => fetchProducts(pagination.page, searchTerm),
     duplicateProduct,
     currentPage: pagination.page,
     totalPages: pagination.total_pages,

@@ -13,8 +13,6 @@ export interface RoutePlanningRow {
   pickup_date?: string;
   starting_location_document?: Blob;
   ending_location_document?: Blob;
-  starting_location_document_url?: string;
-  ending_location_document_url?: string;
 }
 
 export interface ProjectUSNShiftRole {
@@ -89,7 +87,6 @@ export interface WagonOption {
   status: string;
   nextStatus: string;
   currentLocation: string;
-  plannedCurrentLocation?: string;
   arrivalLocation?: string;
   loadedEmptyLocation: string;
   typeOfWagon: string;

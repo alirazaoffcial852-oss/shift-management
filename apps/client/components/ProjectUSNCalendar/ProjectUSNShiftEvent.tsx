@@ -13,8 +13,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { SMSCombobox } from "@workspace/ui/components/custom/SMSCombobox";
+import { useRoleEmployees } from "@/hooks/employee/useRoleEmployees";
 import { useLocomotiveTable } from "@/hooks/locomotive/useLocomotiveTable";
-import { ProjectUSNRoleSelect } from "./ProjectUSNRoleSelect";
 import { useConfirmation } from "@/providers/ConfirmationProvider";
 import ProjectUSNShiftsService from "@/services/projectUsnShift";
 import { toast } from "sonner";
@@ -111,16 +111,12 @@ export function ProjectUSNShiftEvent({
         fullShiftData.usn_shift_roles &&
         fullShiftData.usn_shift_roles.length > 0
       ) {
-        updatePayload.shiftRole = fullShiftData.usn_shift_roles
-          .map((role: any) => {
-            let currentEmployeeId: number | null;
-            if (role.role_id.toString() === roleId) {
-              const parsedId = employeeId ? Number(employeeId) : null;
-              currentEmployeeId = parsedId && parsedId > 0 ? parsedId : null;
-            } else {
-              const existingEmployeeId = role.usn_shift_personnels?.[0]?.employee_id;
-              currentEmployeeId = existingEmployeeId && existingEmployeeId > 0 ? existingEmployeeId : null;
-            }
+        updatePayload.shiftRole = fullShiftData.usn_shift_roles.map(
+          (role: any) => {
+            const currentEmployeeId =
+              role.role_id.toString() === roleId
+                ? Number(employeeId)
+                : role.usn_shift_personnels?.[0]?.employee_id || role.role_id;
 
             return {
               role_id: role.role_id,
@@ -129,10 +125,8 @@ export function ProjectUSNShiftEvent({
               break_duration: role.break_duration,
               start_day: role.start_day,
             };
-          })
-          .filter((role: any) => {
-            return role.employee_id && role.employee_id > 0;
-          });
+          }
+        );
       } else {
         updatePayload.shiftRole = [];
       }
@@ -220,16 +214,14 @@ export function ProjectUSNShiftEvent({
             role.role_id.toString() === roleId
               ? {
                   ...role,
-                  usn_shift_personnels: employeeId && Number(employeeId) > 0
-                    ? [
-                        {
-                          id: Date.now(),
-                          usn_shift_role_id: role.id,
-                          employee_id: Number(employeeId),
-                          employee: { id: Number(employeeId) },
-                        },
-                      ]
-                    : [], // Remove personnel if employee is unselected
+                  usn_shift_personnels: [
+                    {
+                      id: Date.now(),
+                      usn_shift_role_id: role.id,
+                      employee_id: Number(employeeId),
+                      employee: { id: Number(employeeId) },
+                    },
+                  ],
                 }
               : role
           ) || [],
@@ -403,14 +395,92 @@ export function ProjectUSNShiftEvent({
   };
 
   const renderRoleSelects = () => {
-    return shift?.usn_shift_roles?.map((role) => (
-      <ProjectUSNRoleSelect
-        key={role.id}
-        role={role}
-        shift={shift}
-        onEmployeeChange={handleEmployeeChange}
-      />
-    ));
+    return shift?.usn_shift_roles?.map((role) => {
+      const {
+        employees: availableEmployees,
+        isLoading,
+        pagination,
+        handleSearch,
+        handleLoadMore,
+        initialize,
+      } = useRoleEmployees(
+        role.role_id.toString(),
+        role.usn_shift_personnels?.[0]?.employee
+      );
+
+      let employeeList = [...availableEmployees];
+
+      if (role.usn_shift_personnels?.[0]?.employee) {
+        const employeeExists = employeeList.some(
+          (emp) =>
+            emp.id?.toString() ===
+            role.usn_shift_personnels[0].employee?.id?.toString()
+        );
+        if (!employeeExists) {
+          employeeList = [
+            role.usn_shift_personnels[0].employee,
+            ...employeeList,
+          ];
+        }
+      }
+
+      const employeeName = role.usn_shift_personnels?.[0]?.employee_id
+        ? `Employee #${role.usn_shift_personnels[0].employee_id}`
+        : "Select employee";
+
+      return (
+        <div
+          key={role.id}
+          className="flex items-center justify-start mt-1 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <CheckCircle
+            size={14}
+            className={cn(
+              "mr-1",
+              role.usn_shift_personnels?.[0]?.employee_id
+                ? "text-green-600"
+                : "text-gray-400"
+            )}
+          />
+
+          <span
+            className={cn(
+              "flex items-center flex-shrink-0 mr-1",
+              !role.usn_shift_personnels?.[0]?.employee_id && "text-red-500"
+            )}
+            title={role.role?.short_name || ""}
+          >
+            {role.role?.short_name || ""}:
+          </span>
+
+          <div title={employeeName}>
+            <SMSCombobox
+              label=""
+              placeholder="Select Emp"
+              searchPlaceholder="Search employee..."
+              value={
+                role.usn_shift_personnels?.[0]?.employee_id?.toString() || ""
+              }
+              onValueChange={(value) =>
+                handleEmployeeChange(value, role.role_id.toString(), shift)
+              }
+              options={employeeList.map((employee) => ({
+                value: employee.id?.toString() || "",
+                label: employee.name || `Emp #${employee.id}`,
+              }))}
+              required
+              hasMore={pagination.page < pagination.total_pages}
+              loadingMore={isLoading}
+              onLoadMore={handleLoadMore}
+              onSearch={handleSearch}
+              onOpen={initialize}
+              className="w-fit h-2 min-h-3 m-0 text-[10px] bg-transparent border-none rounded-sm py-0 flex items-center hover:bg-transparent whitespace-nowrap overflow-hidden text-ellipsis px-0"
+            />
+          </div>
+        </div>
+      );
+    });
   };
 
   const renderLocomotiveSelect = () => {

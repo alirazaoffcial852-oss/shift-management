@@ -6,7 +6,7 @@ class AuthService {
     return resp;
   }
   async verifyToken(token: string) {
-    return http.get(`/auth/verify-token?token=${token}`);
+    return http.get(`/auth/verify-token`, { token });
   }
   async changePassword(formData: FormData) {
     return http.post(`/auth/update-password`, formData);

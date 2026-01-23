@@ -13,7 +13,6 @@ import { useTranslations } from "next-intl";
 import { useAuth, useCompany } from "@/providers/appProvider";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { usePermission } from "@/hooks/usePermission";
-import { getImagePath } from "@/utils/imagePath";
 
 interface NavButtonProps {
   href: string;
@@ -55,8 +54,8 @@ const NavButton = ({
               isActive ? "bg-white" : "bg-black"
             )}
             style={{
-              WebkitMaskImage: `url(${getImagePath(icon)})`,
-              maskImage: `url(${getImagePath(icon)})`,
+              WebkitMaskImage: `url(${icon})`,
+              maskImage: `url(${icon})`,
               WebkitMaskSize: "contain",
               maskSize: "contain",
               WebkitMaskRepeat: "no-repeat",

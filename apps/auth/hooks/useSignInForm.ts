@@ -79,16 +79,22 @@ export const useSignInForm = ({ onSubmitSuccess }: UseSigninFormProps = {}) => {
           const token = response?.data?.data?.token;
 
           const decodedToken = decodeJwt(token) as DecodedToken;
-          const baseRedirectUrl =
-            decodedToken?.role.name === "ADMIN"
-              ? `${process.env.NEXT_PUBLIC_ADMIN_BASE_URL}/${locale}`
-              : `${process.env.NEXT_PUBLIC_CLIENT_BASE_URL}/${locale}`;
+          const roleName = decodedToken?.role?.name;
+          
+          const isAdmin = roleName === "ADMIN" || roleName === "ADMIN_STAFF";
+          
+          const baseRedirectUrl = isAdmin
+            ? `${process.env.NEXT_PUBLIC_ADMIN_BASE_URL}/${locale}`
+            : `${process.env.NEXT_PUBLIC_CLIENT_BASE_URL}/${locale}`;
 
           const redirectUrl = `${baseRedirectUrl}?token=${encodeURIComponent(token)}`;
 
-          router.push(redirectUrl);
           toast.success(response?.data?.message);
           onSubmitSuccess?.();
+          
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 100);
         } else {
           const errorMessage = response?.data?.message || "Failed to sign in";
           setErrors({ submit: errorMessage });

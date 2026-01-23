@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui", "@workspace/translations"],
-  basePath: "/client",
   webpack: (config) => {
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js", ".jsx"],

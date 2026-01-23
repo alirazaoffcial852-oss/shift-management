@@ -1,6 +1,5 @@
 import React, { useRef } from "react";
 import { Upload } from "lucide-react";
-import { getImagePath } from "@/utils/imagePath";
 
 interface DropZoneProps {
   dragActive: boolean;
@@ -52,7 +51,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
       <div className="flex flex-col items-center justify-center">
         <div className="mb-4">
           <img
-            src={getImagePath("/images/uploadeIcon.jpg")}
+            src="/images/uploadeIcon.jpg"
             alt={uploadIllustration}
             className="w-24 h-24 md:w-32 md:h-32"
           />
