@@ -1,12 +1,17 @@
 
 export const getImagePath = (path: string): string => {
-  if (path.startsWith("/client/")) {
-    return path;
+  if (!path || path.trim() === "") {
+    return "/placeholder.svg";
   }
   
-  if (path.startsWith("/")) {
-    return `/client${path}`;
+  let normalizedPath = path.trim();
+  if (normalizedPath.startsWith("/client/")) {
+    normalizedPath = normalizedPath.replace("/client", "");
   }
   
-  return `/client/${path}`;
+  if (!normalizedPath.startsWith("/")) {
+    normalizedPath = `/${normalizedPath}`;
+  }
+  
+  return normalizedPath;
 };
