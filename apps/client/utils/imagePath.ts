@@ -1,23 +1,17 @@
+
 export const getImagePath = (path: string): string => {
-  // In production (Vercel), images are served from root, not /client
-  const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
-  
-  if (isProduction) {
-    // In production, return path as-is (no /client prefix)
-    if (path.startsWith("/")) {
-      return path;
-    }
-    return `/${path}`;
+  if (!path || path.trim() === "") {
+    return "/placeholder.svg";
   }
   
-  // In development, prepend /client for local routing
-  if (path.startsWith("/client/")) {
-    return path;
+  let normalizedPath = path.trim();
+  if (normalizedPath.startsWith("/client/")) {
+    normalizedPath = normalizedPath.replace("/client", "");
   }
   
-  if (path.startsWith("/")) {
-    return `/client${path}`;
+  if (!normalizedPath.startsWith("/")) {
+    normalizedPath = `/${normalizedPath}`;
   }
   
-  return `/client/${path}`;
+  return normalizedPath;
 };

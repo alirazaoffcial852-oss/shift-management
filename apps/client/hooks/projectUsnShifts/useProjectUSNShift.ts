@@ -404,36 +404,35 @@ export const useProjectUSNShift = (
     (type: "add" | "remove", rowId: string, wagonType: "first" | "second") => {
       const row = formData.routePlanning.find((r) => r.id === rowId);
 
-      if (row?.startLocation) {
-        const normalizedStartLocation = row.startLocation.trim();
-        const startLocationEntity = locations.find(
-          (loc) =>
-            loc.name === normalizedStartLocation ||
-            loc.id.toString() === normalizedStartLocation
-        );
+      let locationFilterValue = "";
 
-        setWagonFilters({
-          location: startLocationEntity
-            ? startLocationEntity.id.toString()
-            : "",
-          status: "",
-          wagonType: "",
-          loadedLocation: "",
-          rail: "",
-          nextStatus: "",
-          date: formData.startDate || "",
-        });
-      } else {
-        setWagonFilters({
-          location: "",
-          status: "",
-          wagonType: "",
-          loadedLocation: "",
-          rail: "",
-          nextStatus: "",
-          date: formData.startDate || "",
-        });
+      if (row?.startLocation) {
+        const normalizedStartLocation = String(row.startLocation).trim();
+        
+        const locationId = parseInt(normalizedStartLocation, 10);
+        const isLocationId = !isNaN(locationId) && locationId > 0;
+        
+        if (isLocationId) {
+          locationFilterValue = String(locationId);
+        } else {
+          const startLocationEntity = locations.find(
+            (loc) => loc.name === normalizedStartLocation
+          );
+          locationFilterValue = startLocationEntity
+            ? String(startLocationEntity.id)
+            : "";
+        }
       }
+
+      setWagonFilters({
+        location: locationFilterValue,
+        status: "",
+        wagonType: "",
+        loadedLocation: "",
+        rail: "",
+        nextStatus: "",
+        date: formData.startDate || "",
+      });
 
       setSelectedWagonModalType(type);
       setSelectedWagonType(wagonType);
@@ -825,12 +824,42 @@ export const useProjectUSNShift = (
         const normalizedStartLocation = row.startLocation?.trim() || "";
         const normalizedEndLocation = row.arrivalLocation?.trim() || "";
         
-        let startLocation = locations.find(
-          (loc) => loc.name?.trim().toLowerCase() === normalizedStartLocation.toLowerCase()
-        );
-        let endLocation = locations.find(
-          (loc) => loc.name?.trim().toLowerCase() === normalizedEndLocation.toLowerCase()
-        );
+        // Try to parse as location ID first (if it's a number string)
+        const startLocationId = normalizedStartLocation ? parseInt(normalizedStartLocation) : null;
+        const endLocationId = normalizedEndLocation ? parseInt(normalizedEndLocation) : null;
+        
+        let startLocation: Location | undefined;
+        let endLocation: Location | undefined;
+        
+        // If it's a valid number, treat it as location ID
+        if (startLocationId && !isNaN(startLocationId) && startLocationId > 0) {
+          startLocation = locations.find((loc) => loc.id === startLocationId);
+          // If not found in locations, create a location object with just the ID
+          // This handles cases where location was loaded via pagination
+          // The ID is what matters for submission, name is just for object structure
+          if (!startLocation) {
+            startLocation = { id: startLocationId, name: "" } as Location;
+          }
+        } else {
+          // Otherwise, treat it as location name (backward compatibility)
+          startLocation = locations.find(
+            (loc) => loc.name?.trim().toLowerCase() === normalizedStartLocation.toLowerCase()
+          );
+        }
+        
+        if (endLocationId && !isNaN(endLocationId) && endLocationId > 0) {
+          endLocation = locations.find((loc) => loc.id === endLocationId);
+          // If not found in locations, create a location object with just the ID
+          // This handles cases where location was loaded via pagination
+          // The ID is what matters for submission, name is just for object structure
+          if (!endLocation) {
+            endLocation = { id: endLocationId, name: "" } as Location;
+          }
+        } else {
+          endLocation = locations.find(
+            (loc) => loc.name?.trim().toLowerCase() === normalizedEndLocation.toLowerCase()
+          );
+        }
 
         if (editMode && existingShift?.usn_shift_route_planning) {
           const existingRoutePlanning = existingShift.usn_shift_route_planning[index];
@@ -1573,12 +1602,12 @@ export const useProjectUSNShift = (
 
             return {
               id: (index + 1).toString(),
-              startLocation: startLocation?.name || "",
+              startLocation: startLocation?.id?.toString() || "",
               selectWagon: firstWagonIds,
               selectSecondWagon: secondWagonIds,
               selectPurpose: formatPurpose(rp.purpose) || "",
               orders: orderIds,
-              arrivalLocation: endLocation?.name || "",
+              arrivalLocation: endLocation?.id?.toString() || "",
               train_no: rp.train_no || "",
               pickup_date: rp.pickup_date || "",
               currentShiftProject: [],

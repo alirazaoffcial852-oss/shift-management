@@ -157,7 +157,7 @@ const RoutePlanningTable: React.FC<RoutePlanningTableProps> = ({
   const locationOptions = useMemo(
     () =>
       allLocations.map((location) => ({
-        value: location.name,
+        value: location.id.toString(),
         label: `${location.name} - (${location.type.toLowerCase()})`,
       })),
     [allLocations]
@@ -705,7 +705,7 @@ const RoutePlanningTable: React.FC<RoutePlanningTableProps> = ({
                         placeholder={t("placeholders.arrivalLocation")}
                         className={`w-full ${rowErrors?.arrivalLocation ? "border-red-500" : ""}`}
                         hasMore={hasMoreLocations}
-                        onLoadMore={() => loadMoreLocations()}
+                        // onLoadMore={() => loadMoreLocations()}
                         loadingMore={loadingMoreLocations}
                         onSearch={handleLocationSearch}
                       />
