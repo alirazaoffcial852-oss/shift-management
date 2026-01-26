@@ -83,11 +83,15 @@ export const useSignInForm = ({ onSubmitSuccess }: UseSigninFormProps = {}) => {
           
           const isAdmin = roleName === "ADMIN" || roleName === "ADMIN_STAFF";
           
-          const baseRedirectUrl = isAdmin
-            ? `${process.env.NEXT_PUBLIC_ADMIN_BASE_URL}/${locale}`
-            : `${process.env.NEXT_PUBLIC_CLIENT_BASE_URL}/${locale}`;
-
-          const redirectUrl = `${baseRedirectUrl}?token=${encodeURIComponent(token)}`;
+          let baseRedirectUrl = isAdmin
+            ? process.env.NEXT_PUBLIC_ADMIN_BASE_URL || "http://localhost:3001"
+            : process.env.NEXT_PUBLIC_CLIENT_BASE_URL || "http://localhost:3002";
+          
+          baseRedirectUrl = baseRedirectUrl.replace(/\/$/, "");
+          
+          baseRedirectUrl = baseRedirectUrl.replace(/\/client$/, "");
+          
+          const redirectUrl = `${baseRedirectUrl}/${locale}?token=${encodeURIComponent(token)}`;
 
           toast.success(response?.data?.message);
           onSubmitSuccess?.();
