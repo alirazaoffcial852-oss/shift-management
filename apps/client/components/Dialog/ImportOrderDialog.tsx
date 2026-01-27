@@ -248,9 +248,20 @@ const ImportOrderDialog = ({
         }
         handleClose();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Import error:", error);
-      toast.error(t("failed_to_import"));
+      if (error?.data?.type === "VALIDATION_ERROR" && error?.data?.errors) {
+        const backendErrors = error.data.errors;
+        const firstError = Object.values(backendErrors)[0];
+        if (Array.isArray(firstError) && firstError.length > 0) {
+          toast.error(firstError[0]);
+        } else {
+          toast.error(error.data.message || t("failed_to_import"));
+        }
+      } else {
+        const errorMessage = error?.data?.message || t("failed_to_import");
+        toast.error(errorMessage);
+      }
     } finally {
       setIsUploading(false);
     }
@@ -303,7 +314,7 @@ const ImportOrderDialog = ({
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-6 py-4 bg-[#3E82582E] text-primary rounded-2xl flex items-center space-x-2 hover:bg-primary hover:text-white transition-colors font-medium"
+                  className="px-6 py-4 bg-[#3E82582E] whitespace-nowrap text-primary rounded-2xl flex items-center space-x-2 hover:bg-primary hover:text-white transition-colors font-medium"
                 >
                   <Upload className="h-4 w-4" />
                   <span>{t("upload_file")}</span>
