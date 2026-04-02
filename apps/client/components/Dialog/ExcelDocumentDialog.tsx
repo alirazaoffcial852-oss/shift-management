@@ -9,7 +9,7 @@ import {
 import { SMSButton } from "@workspace/ui/components/custom/SMSButton";
 import { Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { useTranslations } from "next-intl";
 
 interface ExcelDocumentDialogProps {
@@ -107,25 +107,21 @@ const ExcelDocumentDialog: React.FC<ExcelDocumentDialogProps> = ({
     setHeaders(newHeaders);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
-      const wb = XLSX.utils.book_new();
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Sheet1");
 
-      const data = [
-        headers,
-        ...rows.map((row) => row.cells.map((cell) => cell.value)),
-      ];
+      ws.addRow(headers);
+      rows.forEach((row) => {
+        ws.addRow(row.cells.map((cell) => cell.value));
+      });
 
-      const ws = XLSX.utils.aoa_to_sheet(data);
-
-      const colWidths = headers.map(() => ({ wch: 15 }));
-      ws["!cols"] = colWidths;
-
-      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      ws.columns = headers.map(() => ({ width: 15 }));
 
       const fileName = `timesheet-document-${Date.now()}.xlsx`;
 
-      const fileBuffer = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+      const fileBuffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([fileBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
@@ -145,33 +141,44 @@ const ExcelDocumentDialog: React.FC<ExcelDocumentDialogProps> = ({
   const handleLoadExcel = async (file: File) => {
     try {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: "array" });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0] ?? ""];
-          if (!firstSheet) {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const wb = new ExcelJS.Workbook();
+          await wb.xlsx.load(arrayBuffer);
+
+          const ws = wb.worksheets[0];
+          if (!ws) {
             throw new Error("No valid sheet found in the Excel file.");
           }
-          const jsonData = XLSX.utils.sheet_to_json(
-            firstSheet as unknown as XLSX.WorkSheet,
-            {
-              header: 1,
-              defval: "",
-            }
-          );
+
+          const jsonData: string[][] = [];
+          ws.eachRow({ includeEmpty: true }, (row) => {
+            const values: string[] = [];
+            row.eachCell({ includeEmpty: true }, (cell) => {
+              const v = cell.value;
+              if (v === null || v === undefined) {
+                values.push("");
+              } else if (typeof v === "object" && "text" in v && v.text) {
+                values.push(String(v.text));
+              } else if (typeof v === "object" && "result" in v && v.result) {
+                values.push(String(v.result));
+              } else {
+                values.push(String(v));
+              }
+            });
+            jsonData.push(values);
+          });
 
           if (jsonData.length > 0) {
-            const loadedHeaders = (jsonData[0] as string[]).map((h) =>
-              String(h || `Column ${headers.length + 1}`)
+            const loadedHeaders = (jsonData[0] ?? []).map((h, idx) =>
+              String(h || `Column ${idx + 1}`)
             );
 
-            const loadedRows: Row[] = (jsonData.slice(1) as any[]).map(
-              (row, index) => ({
-                id: `row-${Date.now()}-${index}`,
-                cells: row.map((cell: any) => ({ value: String(cell || "") })),
-              })
-            );
+            const loadedRows: Row[] = jsonData.slice(1).map((row, index) => ({
+              id: `row-${Date.now()}-${index}`,
+              cells: row.map((cell) => ({ value: String(cell || "") })),
+            }));
 
             const normalizedRows = loadedRows.map((row) => {
               const cells = [...row.cells];

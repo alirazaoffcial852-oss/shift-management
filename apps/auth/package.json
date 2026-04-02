@@ -10,16 +10,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@workspace/ui": "workspace:*",
     "@workspace/translations": "workspace:*",
+    "@workspace/ui": "workspace:*",
     "jose": "^5.10.0",
     "lucide-react": "0.456.0",
-    "next": "15.3.8",
+    "next": "15.5.14",
     "next-intl": "^3.0.0",
-    "sonner": "^1.7.4",
     "next-themes": "^0.4.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sonner": "^1.7.4"
   },
   "devDependencies": {
     "@types/node": "^20",

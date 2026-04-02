@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { Shift } from "@/types/shift";
 import { Timesheet } from "@/types/timeSheet";
 
@@ -8,10 +8,26 @@ interface TimesheetExcelData {
   employeeName?: string;
 }
 
-export const generateTimesheetExcel = (data: TimesheetExcelData): void => {
+const downloadXlsxBuffer = (buffer: ArrayBuffer, fileName: string): void => {
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+export const generateTimesheetExcel = async (
+  data: TimesheetExcelData
+): Promise<void> => {
   const { shift, timesheet, employeeName } = data;
 
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
 
   const calculateTotalHours = (
     start: string,
@@ -314,32 +330,26 @@ export const generateTimesheetExcel = (data: TimesheetExcelData): void => {
   ]);
   excelData.push(["Signature", "", "", "", "Signature costumer", "", ""]);
 
-  const ws = XLSX.utils.aoa_to_sheet(excelData);
+  const ws = wb.addWorksheet("Bautagesbericht");
 
-  const colWidths = [
-    { wch: 25 },
-    { wch: 20 },
-    { wch: 20 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 20 },
-    { wch: 25 },
-  ];
-  ws["!cols"] = colWidths;
-
-  const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
-  for (let R = range.s.r; R <= range.e.r; ++R) {
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellAddress]) continue;
-
-      if (R < 15) {
-        ws[cellAddress].t = "s";
-      }
+  excelData.forEach((row, rowIndex) => {
+    const excelRow = ws.addRow(row);
+    if (rowIndex < 15) {
+      excelRow.eachCell((cell) => {
+        cell.numFmt = "@";
+      });
     }
-  }
+  });
 
-  XLSX.utils.book_append_sheet(wb, ws, "Bautagesbericht");
+  ws.columns = [
+    { width: 25 },
+    { width: 20 },
+    { width: 20 },
+    { width: 15 },
+    { width: 15 },
+    { width: 20 },
+    { width: 25 },
+  ];
 
   const sanitizeFilename = (name: string): string => {
     return name.replace(/[^a-zA-Z0-9_-]/g, "_").substring(0, 100);
@@ -357,28 +367,29 @@ export const generateTimesheetExcel = (data: TimesheetExcelData): void => {
         return `Bautagesbericht_${dateStr}_${safeEmployeeName}.xlsx`;
       })();
 
-  XLSX.writeFile(wb, fileName);
+  const buffer = await wb.xlsx.writeBuffer();
+  downloadXlsxBuffer(buffer, fileName);
 };
 
-export const generateMultipleTimesheetExcels = (
+export const generateMultipleTimesheetExcels = async (
   shifts: Shift[],
   timesheets: { shiftId: string; employeeId: string; timesheet: Timesheet }[]
-): void => {
-  shifts.forEach((shift) => {
+): Promise<void> => {
+  for (const shift of shifts) {
     const shiftTimesheets = timesheets.filter(
       (t) => t.shiftId === shift.id?.toString()
     );
 
-    shiftTimesheets.forEach(({ employeeId, timesheet }) => {
+    for (const { employeeId, timesheet } of shiftTimesheets) {
       const employee = shift.shiftRole?.find(
         (r) => r.employee_id?.toString() === employeeId
       )?.employee;
 
-      generateTimesheetExcel({
+      await generateTimesheetExcel({
         shift,
         timesheet,
         employeeName: employee?.name,
       });
-    });
-  });
+    }
+  }
 };
